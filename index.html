@@ -1,0 +1,4313 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LabAPS — Operaciones Matemáticas y Gráficas con Señales</title>
+  <style>
+    :root {
+      --bg-app: #e7e3db;
+      --bg-panel: #fcfbf9;
+      --bg-subtle: #f2efe9;
+      --bg-input: #ffffff;
+      --bg-chip: #ebe7df;
+      --bg-chip-hover: #ddd7cc;
+      --border: #cec8bc;
+      --border-soft: #e3ded4;
+      --text-main: #18181b;
+      --text-muted: #4b4b52;
+      --text-light: #71717a;
+      --accent: #27272a;
+      --accent-hover: #09090b;
+      --accent-soft: rgba(39, 39, 42, 0.09);
+
+      /* Colores de señales (alto contraste sobre fondo neutro) */
+      --sig-x1: #0284c7;
+      --sig-x1-fill: rgba(2, 132, 199, 0.16);
+      --sig-x2: #d97706;
+      --sig-x2-fill: rgba(217, 119, 6, 0.16);
+      --sig-mid: #7c3aed;
+      --sig-mid-fill: rgba(124, 58, 237, 0.16);
+      --sig-y: #059669;
+      --sig-y-fill: rgba(5, 150, 105, 0.18);
+      --sig-dirac: #e11d48;
+
+      /* Gráfica */
+      --canvas-bg: #ffffff;
+      --grid-minor: #f4f2ed;
+      --grid-major: #e6e2d8;
+      --axis-color: #27272a;
+      --axis-label: #52525b;
+
+      --danger: #be123c;
+      --danger-bg: #fff1f2;
+      --success: #047857;
+      --success-bg: #ecfdf5;
+      --warn: #b45309;
+      --warn-bg: #fffbeb;
+
+      --shadow-sm: 0 2px 5px rgba(24, 24, 27, 0.06);
+      --shadow-md: 0 10px 26px rgba(24, 24, 27, 0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --font-sans: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      --font-math: 'Cambria Math', 'Georgia', 'Times New Roman', serif;
+    }
+
+    html[data-theme="dark"] {
+      --bg-app: #111113;
+      --bg-panel: #1b1b1f;
+      --bg-subtle: #242429;
+      --bg-input: #141417;
+      --bg-chip: #28282e;
+      --bg-chip-hover: #35353d;
+      --border: #3a3a44;
+      --border-soft: #2a2a32;
+      --text-main: #f4f4f5;
+      --text-muted: #d4d4d8;
+      --text-light: #9ca3af;
+      --accent: #e4e4e7;
+      --accent-hover: #ffffff;
+      --accent-soft: rgba(244, 244, 245, 0.12);
+
+      --sig-x1: #38bdf8;
+      --sig-x1-fill: rgba(56, 189, 248, 0.18);
+      --sig-x2: #fbbf24;
+      --sig-x2-fill: rgba(251, 191, 36, 0.18);
+      --sig-mid: #c084fc;
+      --sig-mid-fill: rgba(192, 132, 252, 0.18);
+      --sig-y: #34d399;
+      --sig-y-fill: rgba(52, 211, 153, 0.2);
+      --sig-dirac: #fb7185;
+
+      --canvas-bg: #16161a;
+      --grid-minor: #1e1e24;
+      --grid-major: #26262e;
+      --axis-color: #a1a1aa;
+      --axis-label: #d4d4d8;
+
+      --danger: #fb7185;
+      --danger-bg: rgba(251, 113, 133, 0.14);
+      --success: #34d399;
+      --success-bg: rgba(52, 211, 153, 0.14);
+      --warn: #fbbf24;
+      --warn-bg: rgba(251, 191, 36, 0.14);
+
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+      --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.55);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font-sans);
+      background: var(--bg-app);
+      color: var(--text-main);
+      line-height: 1.45;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .topbar {
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #18181b 0%, #52525b 100%);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      display: grid;
+      place-items: center;
+      color: #fafaf9;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: -0.5px;
+      box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+
+    html[data-theme="dark"] .brand-logo {
+      background: linear-gradient(135deg, #f4f4f5 0%, #a1a1aa 100%);
+      color: #111113;
+    }
+
+    .brand-title {
+      font-size: 1.08rem;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-sub {
+      font-size: 0.78rem;
+      color: var(--text-light);
+      margin: 0;
+    }
+
+    .domain-switch {
+      display: inline-flex;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 4px;
+    }
+
+    .domain-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .domain-btn.active {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    html[data-theme="dark"] .domain-btn.active {
+      color: #111113;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-panel);
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 7px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background: var(--bg-subtle);
+      border-color: var(--accent);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    html[data-theme="dark"] .btn-primary {
+      color: #111113;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .btn-sm {
+      padding: 4px 9px;
+      font-size: 0.76rem;
+    }
+
+    .btn.active-toggle {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Main Layout */
+    .workspace {
+      display: grid;
+      grid-template-columns: 400px minmax(0, 1fr);
+      gap: 16px;
+      padding: 16px 20px 28px;
+      max-width: 1720px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1080px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .main-area {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 11px 15px;
+      border-bottom: 1px solid var(--border-soft);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: var(--bg-subtle);
+    }
+
+    .card-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-body {
+      padding: 14px 15px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .dot-x1 { background: var(--sig-x1); }
+    .dot-x2 { background: var(--sig-x2); }
+    .dot-mid { background: var(--sig-mid); }
+    .dot-y { background: var(--sig-y); }
+
+    /* Operation Tabs */
+    .op-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    .op-btn {
+      text-align: left;
+      border: 1px solid var(--border);
+      background: var(--bg-subtle);
+      color: var(--text-main);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .op-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .op-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    html[data-theme="dark"] .op-btn.active {
+      color: #111113;
+    }
+
+    .op-btn.active .op-btn-sub {
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    html[data-theme="dark"] .op-btn.active .op-btn-sub {
+      color: rgba(17, 17, 19, 0.75);
+    }
+
+    .op-btn-title {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .op-btn-sub {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--text-light);
+      font-family: var(--font-math);
+      margin-top: 2px;
+    }
+
+    .op-btn.span-2 {
+      grid-column: span 2;
+    }
+
+    /* Form Controls */
+    .field {
+      margin-bottom: 11px;
+    }
+
+    .field:last-child {
+      margin-bottom: 0;
+    }
+
+    .field-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.79rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    select, input[type="text"], input[type="number"], textarea {
+      width: 100%;
+      background: var(--bg-input);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 7px 10px;
+      font-family: inherit;
+      font-size: 0.84rem;
+      transition: border-color 0.15s ease;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .mono-input {
+      font-family: var(--font-mono) !important;
+      font-size: 0.83rem !important;
+    }
+
+    .slider-row {
+      display: grid;
+      grid-template-columns: 1fr 78px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .num-compact {
+      padding: 5px 7px !important;
+      font-family: var(--font-mono) !important;
+      font-size: 0.8rem !important;
+      text-align: right;
+    }
+
+    .mode-pills {
+      display: inline-flex;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 2px;
+      gap: 2px;
+      width: 100%;
+    }
+
+    .mode-pill {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 5px 6px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .mode-pill.active {
+      background: var(--bg-panel);
+      color: var(--accent);
+      box-shadow: var(--shadow-sm);
+    }
+
+    html[data-theme="dark"] .mode-pill.active {
+      background: #35353d;
+      color: #ffffff;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 6px;
+    }
+
+    .chip {
+      border: 1px solid var(--border);
+      background: var(--bg-chip);
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 3px 7px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+
+    .chip:hover {
+      background: var(--bg-chip-hover);
+      border-color: var(--accent);
+    }
+
+    .chip-text {
+      font-family: var(--font-sans);
+      font-weight: 600;
+    }
+
+    .status-msg {
+      margin-top: 5px;
+      padding: 6px 9px;
+      border-radius: 7px;
+      font-size: 0.76rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .status-ok {
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    .status-err {
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
+
+    .status-warn {
+      background: var(--warn-bg);
+      color: var(--warn);
+    }
+
+    .formula-preview {
+      margin-top: 8px;
+      padding: 7px 10px;
+      background: var(--bg-subtle);
+      border: 1px dashed var(--border);
+      border-radius: 7px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      word-break: break-word;
+    }
+
+    /* Plot Area */
+    .plot-toolbar {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border-soft);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: var(--bg-subtle);
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .legend-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .legend-item.muted {
+      opacity: 0.42;
+      text-decoration: line-through;
+    }
+
+    .canvas-stage {
+      position: relative;
+      width: 100%;
+      height: 440px;
+      background: var(--canvas-bg);
+      cursor: crosshair;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .canvas-stage.tall {
+      height: 540px;
+    }
+
+    canvas#signalCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .hud-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 7px 14px;
+      border-top: 1px solid var(--border-soft);
+      background: var(--bg-subtle);
+      font-size: 0.76rem;
+    }
+
+    .hud-readout {
+      font-family: var(--font-mono);
+      color: var(--text-main);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .hud-hint {
+      color: var(--text-light);
+    }
+
+    /* Convolution Bar */
+    .conv-controls {
+      padding: 10px 14px;
+      border-top: 1px solid var(--border-soft);
+      background: var(--bg-subtle);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .conv-slider-wrap {
+      flex: 1;
+      min-width: 220px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Math & Analysis Panels */
+    .tabs-header {
+      display: flex;
+      border-bottom: 1px solid var(--border-soft);
+      background: var(--bg-subtle);
+      padding: 0 12px;
+      gap: 4px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-light);
+      font-family: inherit;
+      font-size: 0.83rem;
+      font-weight: 600;
+      padding: 10px 14px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .math-hero {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 15px;
+      margin-bottom: 12px;
+    }
+
+    .math-eq {
+      font-family: var(--font-math);
+      font-size: 1.18rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 6px;
+      word-break: break-word;
+    }
+
+    .math-eq-sub {
+      font-family: var(--font-mono);
+      font-size: 0.81rem;
+      color: var(--text-muted);
+      word-break: break-word;
+    }
+
+    .steps-list {
+      margin: 10px 0 0;
+      padding-left: 18px;
+      font-size: 0.84rem;
+      color: var(--text-muted);
+    }
+
+    .steps-list li {
+      margin-bottom: 5px;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .metric-box {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-soft);
+      border-radius: 9px;
+      padding: 9px 11px;
+    }
+
+    .metric-label {
+      font-size: 0.73rem;
+      color: var(--text-light);
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .metric-val {
+      font-family: var(--font-mono);
+      font-size: 0.94rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .metric-note {
+      font-size: 0.71rem;
+      color: var(--text-light);
+      margin-top: 2px;
+    }
+
+    /* Point Evaluator */
+    .eval-box {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      padding: 11px 13px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .eval-result {
+      font-family: var(--font-mono);
+      font-size: 0.83rem;
+      color: var(--text-main);
+      flex: 1;
+      min-width: 220px;
+    }
+
+    /* Table */
+    .table-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .table-scroll {
+      max-height: 290px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    th, td {
+      padding: 7px 10px;
+      text-align: right;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 0.78rem;
+      z-index: 1;
+    }
+
+    tr:hover td {
+      background: var(--accent-soft);
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(24, 24, 27, 0.62);
+      display: none;
+      place-items: center;
+      padding: 16px;
+      z-index: 100;
+    }
+
+    .modal-backdrop.open {
+      display: grid;
+    }
+
+    .modal {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      max-width: 760px;
+      width: 100%;
+      max-height: 86vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+
+    .modal-body {
+      padding: 16px 20px;
+      overflow-y: auto;
+      font-size: 0.88rem;
+    }
+
+    .ref-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      margin: 10px 0 16px;
+    }
+
+    .ref-item {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+
+    .ref-item code {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border-soft);
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Barra Superior -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo" aria-hidden="true">x(t)</div>
+      <div>
+        <h1 class="brand-title">LabAPS — Señales Continuas y Discretas</h1>
+        <p class="brand-sub">Análisis matemático, transformaciones, convolución y graficación </p>
+      </div>
+    </div>
+
+    <div class="domain-switch" role="tablist" aria-label="Dominio de la señal">
+      <button class="domain-btn active" id="btnContinuous" data-domain="continuous">Tiempo Continuo x(t)</button>
+      <button class="domain-btn" id="btnDiscrete" data-domain="discrete">Tiempo Discreto x[n]</button>
+    </div>
+
+    <div class="topbar-actions">
+      <select id="guidedExampleSelect" title="Cargar un ejemplo didáctico" style="width:auto; min-width:210px;">
+        <option value="">✨ Ejemplos guiados...</option>
+        <option value="ex_transform">1. Transformación: 2·x(-0.5t + 1)</option>
+        <option value="ex_rect_diff">2. Pulso como resta: u(t) - u(t - 3)</option>
+        <option value="ex_am_mod">3. Modulación AM: cos(8πt)·tri(t/2)</option>
+        <option value="ex_conv_rect">4. Convolución continua: rect * rect</option>
+        <option value="ex_conv_exp">5. Respuesta exponencial: pulso * e^(-t)u(t)</option>
+        <option value="ex_conv_disc">6. Convolución discreta finita</option>
+        <option value="ex_even_odd">7. Descomposición Par / Impar</option>
+        <option value="ex_decim_interp">8. Diezmado y expansión discreta</option>
+        <option value="ex_deriv_jump">9. Derivada con impulsos de Dirac</option>
+      </select>
+      <button class="btn" id="btnHelp" title="Guía de funciones y controles">📘 Guía</button>
+      <button class="btn" id="btnExportPng" title="Descargar imagen PNG de la gráfica">📷 PNG</button>
+      <button class="btn" id="btnExportCsv" title="Exportar datos a CSV">📄 CSV</button>
+      <button class="btn" id="btnTheme" title="Alternar tema claro / osciloscopio">🌙 Oscuro</button>
+    </div>
+  </header>
+
+  <!-- Área Principal -->
+  <main class="workspace">
+    <!-- Panel Izquierdo de Control -->
+    <aside class="sidebar">
+      <!-- 1. Selector de Operación -->
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">1. Operación Matemática</h2>
+        </div>
+        <div class="card-body">
+          <div class="op-grid" id="opSelector">
+            <button class="op-btn active" data-op="transform">
+              <span class="op-btn-title">Transformación</span>
+              <span class="op-btn-sub" id="opSubTransform">A·x(a·t + b) + C</span>
+            </button>
+            <button class="op-btn" data-op="binary">
+              <span class="op-btn-title">Dos Señales</span>
+              <span class="op-btn-sub" id="opSubBinary">x₁ + x₂, −, ×</span>
+            </button>
+            <button class="op-btn" data-op="convolution">
+              <span class="op-btn-title">Convolución / Corr.</span>
+              <span class="op-btn-sub" id="opSubConv">(x₁ * x₂)(t)</span>
+            </button>
+            <button class="op-btn" data-op="evenodd">
+              <span class="op-btn-title">Par e Impar</span>
+              <span class="op-btn-sub" id="opSubEvenOdd">xₚ(t) + xᵢ(t)</span>
+            </button>
+            <button class="op-btn span-2" data-op="calculus">
+              <span class="op-btn-title" id="opTitleCalculus">Cálculo Diferencial e Integral</span>
+              <span class="op-btn-sub" id="opSubCalculus">Derivada d/dt x(t) · Integral ∫ x(τ)dτ</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Configuración de Señal x1 -->
+      <section class="card" id="cardSignal1">
+        <div class="card-header">
+          <h2 class="card-title"><span class="dot dot-x1"></span> <span id="sig1Title">Señal de Entrada x(t)</span></h2>
+          <button class="btn btn-sm" id="btnSig1ToExpr" title="Convertir predefinida a expresión libre">Editar fórmula</button>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <div class="mode-pills" id="sig1ModePills">
+              <button class="mode-pill active" data-sig="1" data-mode="preset">Predefinida</button>
+              <button class="mode-pill" data-sig="1" data-mode="expr">Expresión libre</button>
+              <button class="mode-pill hidden" id="sig1SeqPill" data-sig="1" data-mode="seq">Secuencia / Gráfica</button>
+            </div>
+          </div>
+
+          <!-- Modo Predefinida x1 -->
+          <div id="sig1PresetBox">
+            <div class="field">
+              <label class="field-label" for="sig1PresetSelect">Tipo de señal</label>
+              <select id="sig1PresetSelect"></select>
+            </div>
+            <div id="sig1PresetParams"></div>
+            <div class="formula-preview" id="sig1PresetFormula"></div>
+          </div>
+
+          <!-- Modo Expresión x1 -->
+          <div id="sig1ExprBox" class="hidden">
+            <div class="field">
+              <label class="field-label" for="sig1ExprInput">
+                <span>Fórmula en función de <code id="varBadge1">t</code></span>
+              </label>
+              <input type="text" id="sig1ExprInput" class="mono-input" placeholder="Ej: exp(-0.5*t)*u(t)" />
+              <div id="sig1ExprStatus"></div>
+              <div class="chip-row" id="sig1Keypad"></div>
+            </div>
+          </div>
+
+          <!-- Modo Secuencia Discreta Editable x1 -->
+          <div id="sig1SeqBox" class="hidden">
+            <div class="field">
+              <label class="field-label" for="sig1SeqStart">Índice inicial n₀ (primera muestra)</label>
+              <input type="number" id="sig1SeqStart" class="mono-input" step="1" value="-2" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="sig1SeqValues">Valores separados por coma (cero fuera del rango)</label>
+              <input type="text" id="sig1SeqValues" class="mono-input" value="1, 2, 3, 1.5, -1" />
+            </div>
+            <div class="field">
+              <button class="btn btn-sm" id="btnToggleCanvasDraw" style="width:100%; justify-content:center;">
+                ✏️ Activar edición directa en la gráfica
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Configuración de Señal x2 (solo operaciones binarias / convolución) -->
+      <section class="card hidden" id="cardSignal2">
+        <div class="card-header">
+          <h2 class="card-title"><span class="dot dot-x2"></span> <span id="sig2Title">Segunda Señal x₂(t)</span></h2>
+          <button class="btn btn-sm" id="btnSig2ToExpr" title="Convertir predefinida a expresión libre">Editar fórmula</button>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <div class="mode-pills" id="sig2ModePills">
+              <button class="mode-pill active" data-sig="2" data-mode="preset">Predefinida</button>
+              <button class="mode-pill" data-sig="2" data-mode="expr">Expresión libre</button>
+              <button class="mode-pill hidden" id="sig2SeqPill" data-sig="2" data-mode="seq">Secuencia</button>
+            </div>
+          </div>
+
+          <div id="sig2PresetBox">
+            <div class="field">
+              <label class="field-label" for="sig2PresetSelect">Tipo de señal</label>
+              <select id="sig2PresetSelect"></select>
+            </div>
+            <div id="sig2PresetParams"></div>
+            <div class="formula-preview" id="sig2PresetFormula"></div>
+          </div>
+
+          <div id="sig2ExprBox" class="hidden">
+            <div class="field">
+              <label class="field-label" for="sig2ExprInput">
+                <span>Fórmula en función de <code id="varBadge2">t</code></span>
+              </label>
+              <input type="text" id="sig2ExprInput" class="mono-input" placeholder="Ej: rect((t-1)/2)" />
+              <div id="sig2ExprStatus"></div>
+              <div class="chip-row" id="sig2Keypad"></div>
+            </div>
+          </div>
+
+          <div id="sig2SeqBox" class="hidden">
+            <div class="field">
+              <label class="field-label" for="sig2SeqStart">Índice inicial n₀</label>
+              <input type="number" id="sig2SeqStart" class="mono-input" step="1" value="0" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="sig2SeqValues">Valores separados por coma</label>
+              <input type="text" id="sig2SeqValues" class="mono-input" value="1, -1, 2" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Parámetros específicos de la Operación -->
+      <section class="card" id="cardOpParams">
+        <div class="card-header">
+          <h2 class="card-title"><span class="dot dot-y"></span> <span id="opParamsTitle">Parámetros de Transformación</span></h2>
+          <button class="btn btn-sm" id="btnResetOpParams">Restablecer</button>
+        </div>
+        <div class="card-body">
+          <!-- Transformación -->
+          <div id="paramsTransform">
+            <div class="field">
+              <div class="field-label"><span>Amplitud A (escala vertical / inversión)</span><code id="lblParamA">1.00</code></div>
+              <div class="slider-row">
+                <input type="range" id="rngParamA" min="-4" max="4" step="0.1" value="1" />
+                <input type="number" id="numParamA" class="num-compact" step="0.1" value="1" />
+              </div>
+            </div>
+            <div class="field">
+              <div class="field-label"><span id="lblTitleSmallA">Escala temporal a</span><code id="lblParamSmallA">1.00</code></div>
+              <div class="slider-row">
+                <input type="range" id="rngParamSmallA" min="-3" max="3" step="0.1" value="1" />
+                <input type="number" id="numParamSmallA" class="num-compact" step="0.1" value="1" />
+              </div>
+            </div>
+            <div class="field">
+              <div class="field-label"><span>Desplazamiento b (en a·t + b)</span><code id="lblParamB">0.00</code></div>
+              <div class="slider-row">
+                <input type="range" id="rngParamB" min="-8" max="8" step="0.25" value="0" />
+                <input type="number" id="numParamB" class="num-compact" step="0.25" value="0" />
+              </div>
+            </div>
+            <div class="field">
+              <div class="field-label"><span>Nivel DC C (desplazamiento vertical)</span><code id="lblParamC">0.00</code></div>
+              <div class="slider-row">
+                <input type="range" id="rngParamC" min="-4" max="4" step="0.1" value="0" />
+                <input type="number" id="numParamC" class="num-compact" step="0.1" value="0" />
+              </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="field">
+              <div class="field-label"><span>Atajos de operaciones clásicas</span></div>
+              <div class="chip-row" id="transformShortcuts">
+                <button class="chip chip-text" data-preset="delay">Atraso (t−2)</button>
+                <button class="chip chip-text" data-preset="advance">Adelanto (t+2)</button>
+                <button class="chip chip-text" data-preset="reflect">Reflexión (−t)</button>
+                <button class="chip chip-text" data-preset="compress">Compresión (2t)</button>
+                <button class="chip chip-text" data-preset="expand">Expansión (0.5t)</button>
+                <button class="chip chip-text" data-preset="invertAmp">Inv. amplitud (−x)</button>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="field">
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.81rem; font-weight:600; cursor:pointer;">
+                <input type="checkbox" id="chkShowIntermediate" style="width:auto;" />
+                Mostrar señal intermedia paso a paso
+              </label>
+              <div id="intermediateOrderWrap" class="hidden" style="margin-top:8px;">
+                <select id="selTransformOrder">
+                  <option value="shiftFirst">Ruta A: 1° Desplazar x(t+b) → 2° Escalar v(at)</option>
+                  <option value="scaleFirst">Ruta B: 1° Escalar x(at) → 2° Desplazar w(t + b/a)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dos señales -->
+          <div id="paramsBinary" class="hidden">
+            <div class="field">
+              <label class="field-label" for="selBinaryOp">Operación entre señales</label>
+              <select id="selBinaryOp">
+                <option value="add">Suma: y = x₁ + x₂</option>
+                <option value="sub">Resta: y = x₁ − x₂</option>
+                <option value="mul">Multiplicación (Modulación): y = x₁ · x₂</option>
+                <option value="lincomb">Combinación Lineal: y = α·x₁ + β·x₂</option>
+              </select>
+            </div>
+            <div id="linCombParams" class="hidden">
+              <div class="field">
+                <div class="field-label"><span>Coeficiente α (peso de x₁)</span><code id="lblAlpha">1.00</code></div>
+                <div class="slider-row">
+                  <input type="range" id="rngAlpha" min="-3" max="3" step="0.1" value="1" />
+                  <input type="number" id="numAlpha" class="num-compact" step="0.1" value="1" />
+                </div>
+              </div>
+              <div class="field">
+                <div class="field-label"><span>Coeficiente β (peso de x₂)</span><code id="lblBeta">1.00</code></div>
+                <div class="slider-row">
+                  <input type="range" id="rngBeta" min="-3" max="3" step="0.1" value="1" />
+                  <input type="number" id="numBeta" class="num-compact" step="0.1" value="1" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Convolución / Correlación -->
+          <div id="paramsConv" class="hidden">
+            <div class="field">
+              <label class="field-label" for="selConvType">Tipo de operación integral / sumatoria</label>
+              <select id="selConvType">
+                <option value="conv">Convolución: (x₁ * x₂)</option>
+                <option value="xcorr">Correlación Cruzada: R_x₁x₂</option>
+                <option value="acorr">Autocorrelación de x₁: R_x₁x₁</option>
+              </select>
+            </div>
+            <div class="field" id="convRangeField">
+              <div class="field-label"><span>Soporte de integración / suma [−L, +L]</span><code id="lblConvSpan">12</code></div>
+              <div class="slider-row">
+                <input type="range" id="rngConvSpan" min="5" max="25" step="1" value="12" />
+                <input type="number" id="numConvSpan" class="num-compact" min="4" max="35" step="1" value="12" />
+              </div>
+            </div>
+            <div class="status-msg status-ok" style="font-size:0.75rem;">
+              <span>💡 Usa el deslizador o ▶ Animar bajo la gráfica para ver reflejar y deslizar en tiempo real.</span>
+            </div>
+          </div>
+
+          <!-- Par e Impar -->
+          <div id="paramsEvenOdd" class="hidden">
+            <p style="font-size:0.81rem; color:var(--text-muted); margin:0 0 8px;">
+              Toda señal puede descomponerse de forma única como suma de una componente <b>par</b> y una componente <b>impar</b>:
+            </p>
+            <div class="formula-preview" style="margin-top:0;">
+              xₚ = ½·[x(t) + x(−t)]<br />
+              xᵢ = ½·[x(t) − x(−t)]
+            </div>
+          </div>
+
+          <!-- Cálculo / Diferencias -->
+          <div id="paramsCalculus" class="hidden">
+            <div class="field">
+              <label class="field-label" for="selCalcOp">Operador</label>
+              <select id="selCalcOp">
+                <option value="deriv">Derivada d/dt x(t)</option>
+                <option value="integ">Integral acumulada ∫ x(τ) dτ</option>
+              </select>
+            </div>
+            <div class="field hidden" id="calcLowerLimitBox">
+              <label class="field-label" for="selCalcLower">Límite inferior de integración / suma</label>
+              <select id="selCalcLower">
+                <option value="windowStart">Desde el borde izquierdo de la gráfica</option>
+                <option value="zero">Desde 0 (causal: 0 para argumento &lt; 0)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Área Derecha: Gráficas + Resultados Matemáticos -->
+    <div class="main-area">
+      <!-- Tarjeta de Gráfica Interactiva -->
+      <section class="card">
+        <div class="plot-toolbar">
+          <div class="legend-bar" id="legendBar"></div>
+
+          <div class="toolbar-group">
+            <button class="btn btn-sm" id="btnLayoutMode" title="Alternar vista superpuesta o paneles apilados">Vista: Apilada</button>
+            <button class="btn btn-sm" id="btnZoomIn" title="Acercar">+</button>
+            <button class="btn btn-sm" id="btnZoomOut" title="Alejar">−</button>
+            <button class="btn btn-sm" id="btnAutoY" title="Ajustar escala vertical automáticamente">Auto-Y</button>
+            <button class="btn btn-sm" id="btnResetView" title="Restablecer rango de ejes">Restablecer ejes</button>
+          </div>
+        </div>
+
+        <div class="canvas-stage" id="canvasStage">
+          <canvas id="signalCanvas"></canvas>
+        </div>
+
+        <div class="hud-bar">
+          <div class="hud-readout" id="hudReadout">Mueve el cursor sobre la gráfica para inspeccionar valores</div>
+          <div class="hud-hint" id="hudHint">Arrastra para mover · Rueda para zoom (Shift+rueda: eje X, Alt+rueda: eje Y)</div>
+        </div>
+
+        <!-- Barra de animación de Convolución / Correlación -->
+        <div class="conv-controls hidden" id="convBar">
+          <button class="btn btn-primary btn-sm" id="btnConvPlay">▶ Animar</button>
+          <div class="conv-slider-wrap">
+            <label for="rngConvShift" style="font-size:0.8rem; font-weight:700; white-space:nowrap;" id="lblConvVar">t₀ = 0.00</label>
+            <input type="range" id="rngConvShift" min="-8" max="8" step="0.05" value="0" />
+          </div>
+          <select id="selConvSpeed" style="width:auto;" title="Velocidad de animación">
+            <option value="0.6">0.6x</option>
+            <option value="1" selected>1x</option>
+            <option value="2">2x</option>
+          </select>
+          <div id="convInstantReadout" style="font-family:var(--font-mono); font-size:0.79rem; font-weight:600; color:var(--sig-y);"></div>
+        </div>
+      </section>
+
+      <!-- Tarjeta de Análisis Matemático y Tabla -->
+      <section class="card">
+        <div class="tabs-header">
+          <button class="tab-btn active" data-tab="math">📐 Análisis Matemático y Propiedades</button>
+          <button class="tab-btn" data-tab="table">📊 Tabla de Valores Evaluados</button>
+        </div>
+
+        <div class="card-body">
+          <!-- Tab 1: Análisis Matemático -->
+          <div id="tabMath">
+            <div class="math-hero">
+              <div class="math-eq" id="mathMainEq">y(t) = x(t)</div>
+              <div class="math-eq-sub" id="mathSubEq"></div>
+              <ul class="steps-list" id="mathSteps"></ul>
+            </div>
+
+            <div class="metrics-grid" id="metricsGrid"></div>
+
+            <!-- Evaluador puntual interactivo -->
+            <div class="eval-box">
+              <label for="inpEvalPoint" style="font-size:0.82rem; font-weight:700;" id="lblEvalPoint">Evaluar en t =</label>
+              <input type="number" id="inpEvalPoint" class="mono-input" style="width:110px;" step="0.25" value="1" />
+              <div class="eval-result" id="evalResultText"></div>
+            </div>
+          </div>
+
+          <!-- Tab 2: Tabla de Valores -->
+          <div id="tabTable" class="hidden">
+            <div class="table-controls">
+              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <span style="font-size:0.82rem; font-weight:600;" id="lblTableRange">Muestras dentro de la ventana visible</span>
+                <label id="wrapTableStep" style="display:flex; align-items:center; gap:6px; font-size:0.8rem;">
+                  Paso Δt:
+                  <select id="selTableStep" style="width:auto;">
+                    <option value="0.1">0.1</option>
+                    <option value="0.25" selected>0.25</option>
+                    <option value="0.5">0.5</option>
+                    <option value="1">1.0</option>
+                  </select>
+                </label>
+              </div>
+              <span style="font-size:0.77rem; color:var(--text-light);" id="lblTableCount"></span>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Modal de Guía / Referencia -->
+  <div class="modal-backdrop" id="helpModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+      <div class="card-header">
+        <h2 class="card-title" id="helpModalTitle">📘 Guía de Sintaxis Matemática y Controles</h2>
+        <button class="btn btn-sm" id="btnCloseHelp">Cerrar ✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Este laboratorio evalúa expresiones matemáticas en tiempo real usando un analizador sintáctico construido desde cero. Puedes escribir ecuaciones en función de <code>t</code> (tiempo continuo) o <code>n</code> (tiempo discreto).</p>
+
+        <h3 style="margin:12px 0 6px; font-size:0.95rem;">Señales elementales integradas</h3>
+        <div class="ref-grid">
+          <div class="ref-item"><code>u(t)</code> / <code>step(t)</code><br><small>Escalón unitario: 1 si arg ≥ 0, 0 si arg &lt; 0.</small></div>
+          <div class="ref-item"><code>delta(t)</code> / <code>imp(t)</code><br><small>Impulso: Kronecker δ[n] en discreto; impulso de Dirac con flecha en continuo.</small></div>
+          <div class="ref-item"><code>r(t)</code> / <code>ramp(t)</code><br><small>Rampa unitaria: arg si arg ≥ 0, 0 si arg &lt; 0.</small></div>
+          <div class="ref-item"><code>rect(t)</code><br><small>Pulso rectangular unitario: 1 para |arg| ≤ 0.5, 0 fuera (ancho 1).</small></div>
+          <div class="ref-item"><code>tri(t)</code><br><small>Pulso triangular: max(0, 1 − |arg|) con soporte en [−1, 1].</small></div>
+          <div class="ref-item"><code>sinc(t)</code><br><small>Sinc normalizada: sin(π·arg)/(π·arg), con sinc(0) = 1.</small></div>
+          <div class="ref-item"><code>sgn(t)</code><br><small>Función signo: −1 si arg &lt; 0, 0 si arg = 0, +1 si arg &gt; 0.</small></div>
+          <div class="ref-item"><code>pulse(t, a, b)</code><br><small>Pulso entre a y b: equivalente a u(t − a) − u(t − b).</small></div>
+        </div>
+
+        <h3 style="margin:12px 0 6px; font-size:0.95rem;">Funciones matemáticas y constantes</h3>
+        <p>Operadores: <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code> (potencia, admite multiplicación implícita como <code>2t</code> o <code>3sin(pi*t)</code>).</p>
+        <p>Funciones: <code>sin</code>, <code>cos</code>, <code>tan</code>, <code>asin</code>, <code>acos</code>, <code>atan</code>, <code>sinh</code>, <code>cosh</code>, <code>tanh</code>, <code>exp</code>, <code>ln</code> (log natural), <code>log</code> (base 10), <code>sqrt</code>, <code>abs</code>, <code>floor</code>, <code>ceil</code>, <code>round</code>, <code>min</code>, <code>max</code>. Constantes: <code>pi</code>, <code>e</code>, <code>tau</code> (2π).</p>
+
+        <h3 style="margin:12px 0 6px; font-size:0.95rem;">Convenciones importantes</h3>
+        <ul>
+          <li><b>Escalamiento discreto x[a·n + b]:</b> En tiempo discreto, si <code>a·n + b</code> no es entero (por ejemplo expansión temporal <code>x[0.5n]</code>), el resultado es <b>0</b> (interpolación por ceros). Si <code>|a| &gt; 1</code> (diezmado), solo se conservan muestras donde <code>a·n + b ∈ ℤ</code>.</li>
+          <li><b>Convolución continua:</b> Se calcula numéricamente sobre el soporte configurable <code>[−L, +L]</code> con paso fino, e incorpora de forma analítica los impulsos de Dirac si están presentes.</li>
+          <li><b>Controles del gráfico:</b> Arrastra para desplazar; rueda del ratón para zoom (<code>Shift + rueda</code> solo eje X, <code>Alt + rueda</code> solo eje Y). En modo <i>Secuencia Discreta</i> puedes activar el lápiz para arrastrar muestras directamente sobre el plano.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* =========================================================================
+         1. UTILIDADES NUMÉRICAS Y DE FORMATO
+         ========================================================================= */
+      const EPS = 1e-9;
+
+      function fmtNum(val, decimals = 3) {
+        if (!Number.isFinite(val)) return 'Indef.';
+        const cleaned = Math.abs(val) < 1e-10 ? 0 : val;
+        return Number(cleaned.toFixed(decimals)).toString();
+      }
+
+      function fmtFixed(val, decimals = 2) {
+        if (!Number.isFinite(val)) return '—';
+        const cleaned = Math.abs(val) < 1e-10 ? 0 : val;
+        return cleaned.toFixed(decimals);
+      }
+
+      function isNearInteger(x, tol = 1e-6) {
+        return Number.isFinite(x) && Math.abs(x - Math.round(x)) < tol;
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function formatShiftExpr(varName, shift) {
+        if (Math.abs(shift) < 1e-9) return varName;
+        return shift > 0 ? `${varName} - ${fmtNum(shift)}` : `${varName} + ${fmtNum(-shift)}`;
+      }
+
+      /* =========================================================================
+         2. MOTOR DE ANÁLISIS Y EVALUACIÓN DE EXPRESIONES MATEMÁTICAS DESDE CERO
+         ========================================================================= */
+      const CONSTANTS = {
+        pi: Math.PI,
+        e: Math.E,
+        tau: Math.PI * 2
+      };
+
+      const FUNCTIONS = {
+        u: { arity: 1, fn: (x) => (x >= -1e-12 ? 1 : 0) },
+        step: { arity: 1, fn: (x) => (x >= -1e-12 ? 1 : 0) },
+        heaviside: { arity: 1, fn: (x) => (x >= -1e-12 ? 1 : 0) },
+        delta: { arity: 1, fn: (x, isDiscrete) => (isDiscrete ? (Math.abs(x) < 1e-7 ? 1 : 0) : 0), isDelta: true },
+        imp: { arity: 1, fn: (x, isDiscrete) => (isDiscrete ? (Math.abs(x) < 1e-7 ? 1 : 0) : 0), isDelta: true },
+        r: { arity: 1, fn: (x) => (x > 0 ? x : 0) },
+        ramp: { arity: 1, fn: (x) => (x > 0 ? x : 0) },
+        rect: { arity: 1, fn: (x) => (Math.abs(x) <= 0.5 + 1e-12 ? 1 : 0) },
+        tri: { arity: 1, fn: (x) => Math.max(0, 1 - Math.abs(x)) },
+        sinc: {
+          arity: 1,
+          fn: (x) => (Math.abs(x) < 1e-9 ? 1 : Math.sin(Math.PI * x) / (Math.PI * x))
+        },
+        sgn: { arity: 1, fn: (x) => (Math.abs(x) < 1e-12 ? 0 : x > 0 ? 1 : -1) },
+        sign: { arity: 1, fn: (x) => (Math.abs(x) < 1e-12 ? 0 : x > 0 ? 1 : -1) },
+        pulse: { arity: 3, fn: (x, _d, a, b) => (x >= a - 1e-12 && x < b - 1e-12 ? 1 : 0) },
+        sin: { arity: 1, fn: (x) => Math.sin(x) },
+        cos: { arity: 1, fn: (x) => Math.cos(x) },
+        tan: { arity: 1, fn: (x) => Math.tan(x) },
+        asin: { arity: 1, fn: (x) => Math.asin(x) },
+        acos: { arity: 1, fn: (x) => Math.acos(x) },
+        atan: { arity: 1, fn: (x) => Math.atan(x) },
+        sinh: { arity: 1, fn: (x) => Math.sinh(x) },
+        cosh: { arity: 1, fn: (x) => Math.cosh(x) },
+        tanh: { arity: 1, fn: (x) => Math.tanh(x) },
+        exp: { arity: 1, fn: (x) => Math.exp(x) },
+        ln: { arity: 1, fn: (x) => Math.log(x) },
+        log: { arity: 1, fn: (x) => Math.log10(x) },
+        log2: { arity: 1, fn: (x) => Math.log2(x) },
+        sqrt: { arity: 1, fn: (x) => Math.sqrt(x) },
+        abs: { arity: 1, fn: (x) => Math.abs(x) },
+        floor: { arity: 1, fn: (x) => Math.floor(x) },
+        ceil: { arity: 1, fn: (x) => Math.ceil(x) },
+        round: { arity: 1, fn: (x) => Math.round(x) },
+        min: { arity: 2, fn: (a, _d, b) => Math.min(a, b) },
+        max: { arity: 2, fn: (a, _d, b) => Math.max(a, b) }
+      };
+
+      function tokenizeExpression(input) {
+        const tokens = [];
+        let i = 0;
+        const len = input.length;
+
+        while (i < len) {
+          const ch = input[i];
+          if (/\s/.test(ch)) {
+            i++;
+            continue;
+          }
+          if (/[0-9.]/.test(ch)) {
+            const sub = input.slice(i);
+            const match = sub.match(/^(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/);
+            if (!match) {
+              throw new Error(`Número inválido cerca de "${input.slice(i, i + 6)}"`);
+            }
+            tokens.push({ type: 'NUM', value: parseFloat(match[0]), pos: i });
+            i += match[0].length;
+            continue;
+          }
+          if (/[a-zA-Z_]/.test(ch)) {
+            const sub = input.slice(i);
+            const match = sub.match(/^[a-zA-Z_][a-zA-Z0-9_]*/);
+            tokens.push({ type: 'IDENT', value: match[0], pos: i });
+            i += match[0].length;
+            continue;
+          }
+          if ('+-*/^(),'.includes(ch)) {
+            tokens.push({ type: 'OP', value: ch, pos: i });
+            i++;
+            continue;
+          }
+          throw new Error(`Símbolo no reconocido "${ch}" en la posición ${i + 1}`);
+        }
+
+        // Inserción de multiplicación implícita: 2t, 2pi, 2sin(t), (t)(t+1), pi t
+        const out = [];
+        for (let idx = 0; idx < tokens.length; idx++) {
+          const curr = tokens[idx];
+          if (out.length > 0) {
+            const prev = out[out.length - 1];
+            const prevEndsOperand =
+              prev.type === 'NUM' ||
+              (prev.type === 'OP' && prev.value === ')') ||
+              (prev.type === 'IDENT' && !isFunctionCall(prev, curr));
+            const currStartsOperand =
+              curr.type === 'NUM' ||
+              curr.type === 'IDENT' ||
+              (curr.type === 'OP' && curr.value === '(');
+
+            if (prevEndsOperand && currStartsOperand) {
+              // Evitar insertar '*' entre nombre de función y '('
+              if (!(prev.type === 'IDENT' && curr.type === 'OP' && curr.value === '(' && FUNCTIONS[prev.value.toLowerCase()])) {
+                out.push({ type: 'OP', value: '*', pos: curr.pos });
+              }
+            }
+          }
+          out.push(curr);
+        }
+        return out;
+      }
+
+      function isFunctionCall(prevTok, nextTok) {
+        if (prevTok.type !== 'IDENT') return false;
+        const name = prevTok.value.toLowerCase();
+        return Boolean(FUNCTIONS[name]) && nextTok && nextTok.type === 'OP' && nextTok.value === '(';
+      }
+
+      function compileExpression(exprStr, domain) {
+        const expectedVar = domain === 'discrete' ? 'n' : 't';
+        const trimmed = (exprStr || '').trim();
+        if (!trimmed) {
+          throw new Error('Escribe una expresión matemática.');
+        }
+
+        const tokens = tokenizeExpression(trimmed);
+        let cursor = 0;
+
+        function peek() {
+          return tokens[cursor] || null;
+        }
+        function consume() {
+          return tokens[cursor++];
+        }
+
+        function parseExpr() {
+          let node = parseTerm();
+          while (peek() && peek().type === 'OP' && (peek().value === '+' || peek().value === '-')) {
+            const op = consume().value;
+            const right = parseTerm();
+            node = { kind: 'bin', op, left: node, right, hasDelta: node.hasDelta || right.hasDelta };
+          }
+          return node;
+        }
+
+        function parseTerm() {
+          let node = parseUnary();
+          while (peek() && peek().type === 'OP' && (peek().value === '*' || peek().value === '/')) {
+            const op = consume().value;
+            const right = parseUnary();
+            node = { kind: 'bin', op, left: node, right, hasDelta: node.hasDelta || right.hasDelta };
+          }
+          return node;
+        }
+
+        function parseUnary() {
+          if (peek() && peek().type === 'OP' && (peek().value === '+' || peek().value === '-')) {
+            const op = consume().value;
+            const arg = parseUnary();
+            if (op === '+') return arg;
+            return { kind: 'neg', arg, hasDelta: arg.hasDelta };
+          }
+          return parsePower();
+        }
+
+        function parsePower() {
+          let base = parsePrimary();
+          if (peek() && peek().type === 'OP' && peek().value === '^') {
+            consume();
+            const exp = parseUnary(); // Permite e^-t
+            return { kind: 'bin', op: '^', left: base, right: exp, hasDelta: base.hasDelta || exp.hasDelta };
+          }
+          return base;
+        }
+
+        function parsePrimary() {
+          const tok = peek();
+          if (!tok) {
+            throw new Error('Expresión incompleta al final de la fórmula.');
+          }
+          if (tok.type === 'NUM') {
+            consume();
+            return { kind: 'num', value: tok.value, hasDelta: false };
+          }
+          if (tok.type === 'OP' && tok.value === '(') {
+            consume();
+            const inner = parseExpr();
+            const close = peek();
+            if (!close || close.type !== 'OP' || close.value !== ')') {
+              throw new Error('Falta cerrar un paréntesis ")".');
+            }
+            consume();
+            return inner;
+          }
+          if (tok.type === 'IDENT') {
+            consume();
+            const raw = tok.value;
+            const lower = raw.toLowerCase();
+
+            if (peek() && peek().type === 'OP' && peek().value === '(') {
+              const fnDef = FUNCTIONS[lower];
+              if (!fnDef) {
+                throw new Error(`Función desconocida "${raw}".`);
+              }
+              consume(); // '('
+              const args = [];
+              if (!(peek() && peek().type === 'OP' && peek().value === ')')) {
+                args.push(parseExpr());
+                while (peek() && peek().type === 'OP' && peek().value === ',') {
+                  consume();
+                  args.push(parseExpr());
+                }
+              }
+              const close = peek();
+              if (!close || close.type !== 'OP' || close.value !== ')') {
+                throw new Error(`Falta ")" al cerrar ${raw}(...).`);
+              }
+              consume();
+              if (args.length !== fnDef.arity) {
+                throw new Error(`La función ${raw} requiere ${fnDef.arity} argumento(s).`);
+              }
+              const hasDelta = Boolean(fnDef.isDelta) || args.some((a) => a.hasDelta);
+              return { kind: 'call', name: lower, fnDef, args, hasDelta };
+            }
+
+            if (lower === expectedVar) {
+              return { kind: 'var', hasDelta: false };
+            }
+            if (lower === 't' && expectedVar === 'n') {
+              const err = new Error('En tiempo discreto usa la variable "n" en lugar de "t".');
+              err.wrongVar = 't';
+              throw err;
+            }
+            if (lower === 'n' && expectedVar === 't') {
+              const err = new Error('En tiempo continuo usa la variable "t" en lugar de "n".');
+              err.wrongVar = 'n';
+              throw err;
+            }
+            if (Object.prototype.hasOwnProperty.call(CONSTANTS, lower)) {
+              return { kind: 'num', value: CONSTANTS[lower], hasDelta: false };
+            }
+            throw new Error(`Identificador desconocido "${raw}". Usa "${expectedVar}", pi, e o una función.`);
+          }
+          throw new Error(`Token inesperado "${tok.value}".`);
+        }
+
+        const ast = parseExpr();
+        if (cursor < tokens.length) {
+          throw new Error(`Sobran caracteres cerca de "${tokens[cursor].value}".`);
+        }
+
+        const isDiscrete = domain === 'discrete';
+        const evalAst = (node, xVal) => {
+          switch (node.kind) {
+            case 'num':
+              return node.value;
+            case 'var':
+              return xVal;
+            case 'neg':
+              return -evalAst(node.arg, xVal);
+            case 'bin': {
+              const l = evalAst(node.left, xVal);
+              const r = evalAst(node.right, xVal);
+              if (node.op === '+') return l + r;
+              if (node.op === '-') return l - r;
+              if (node.op === '*') return l * r;
+              if (node.op === '/') return r === 0 ? NaN : l / r;
+              if (node.op === '^') return Math.pow(l, r);
+              return NaN;
+            }
+            case 'call': {
+              const a0 = evalAst(node.args[0], xVal);
+              if (node.args.length === 1) return node.fnDef.fn(a0, isDiscrete);
+              if (node.args.length === 2) return node.fnDef.fn(a0, isDiscrete, evalAst(node.args[1], xVal));
+              return node.fnDef.fn(a0, isDiscrete, evalAst(node.args[1], xVal), evalAst(node.args[2], xVal));
+            }
+            default:
+              return NaN;
+          }
+        };
+
+        return {
+          ast,
+          evaluate: (xVal) => evalAst(ast, xVal),
+          extractImpulses: (xMin, xMax) => extractDiracImpulses(ast, evalAst, xMin, xMax)
+        };
+      }
+
+      // Extrae términos con delta(...) en tiempo continuo: weightFn(t) * delta(argAst(t))
+      function extractDiracImpulses(ast, evalAst, xMin, xMax) {
+        if (!ast || !ast.hasDelta) return [];
+        const terms = [];
+
+        function collect(node, weightFns) {
+          if (!node.hasDelta) return;
+          if (node.kind === 'neg') {
+            collect(node.arg, [...weightFns, () => -1]);
+            return;
+          }
+          if (node.kind === 'bin') {
+            if (node.op === '+') {
+              collect(node.left, weightFns);
+              collect(node.right, weightFns);
+              return;
+            }
+            if (node.op === '-') {
+              collect(node.left, weightFns);
+              collect(node.right, [...weightFns, () => -1]);
+              return;
+            }
+            if (node.op === '*') {
+              if (node.left.hasDelta && !node.right.hasDelta) {
+                collect(node.left, [...weightFns, (t) => evalAst(node.right, t)]);
+                return;
+              }
+              if (node.right.hasDelta && !node.left.hasDelta) {
+                collect(node.right, [...weightFns, (t) => evalAst(node.left, t)]);
+                return;
+              }
+            }
+            if (node.op === '/' && node.left.hasDelta && !node.right.hasDelta) {
+              collect(node.left, [...weightFns, (t) => {
+                const d = evalAst(node.right, t);
+                return d === 0 ? 0 : 1 / d;
+              }]);
+              return;
+            }
+          }
+          if (node.kind === 'call' && node.fnDef.isDelta) {
+            terms.push({ argNode: node.args[0], weightFns });
+          }
+        }
+
+        collect(ast, []);
+        if (terms.length === 0) return [];
+
+        const impulses = [];
+        const steps = 1600;
+        const dt = (xMax - xMin) / steps;
+
+        for (const term of terms) {
+          const g = (t) => evalAst(term.argNode, t);
+          let prevT = xMin;
+          let prevG = g(prevT);
+          const roots = [];
+
+          for (let i = 1; i <= steps; i++) {
+            const curT = xMin + i * dt;
+            const curG = g(curT);
+            if (Number.isFinite(prevG) && Number.isFinite(curG)) {
+              if (Math.abs(prevG) < 1e-9) {
+                roots.push(prevT);
+              } else if (prevG * curG < 0) {
+                // Bisección
+                let lo = prevT;
+                let hi = curT;
+                let glo = prevG;
+                for (let iter = 0; iter < 32; iter++) {
+                  const mid = 0.5 * (lo + hi);
+                  const gmid = g(mid);
+                  if (Math.abs(gmid) < 1e-12) {
+                    lo = hi = mid;
+                    break;
+                  }
+                  if (glo * gmid <= 0) {
+                    hi = mid;
+                  } else {
+                    lo = mid;
+                    glo = gmid;
+                  }
+                }
+                roots.push(0.5 * (lo + hi));
+              }
+            }
+            prevT = curT;
+            prevG = curG;
+          }
+
+          // Eliminar raíces duplicadas muy cercanas
+          for (const r of roots) {
+            if (impulses.some((imp) => Math.abs(imp.t - r) < 1e-4 && imp._term === term)) continue;
+            const h = 1e-5;
+            const dg = (g(r + h) - g(r - h)) / (2 * h);
+            if (!Number.isFinite(dg) || Math.abs(dg) < 1e-6) continue;
+            let w = 1;
+            for (const wf of term.weightFns) {
+              w *= wf(r);
+            }
+            const area = w / Math.abs(dg);
+            if (Number.isFinite(area) && Math.abs(area) > 1e-7) {
+              impulses.push({ t: r, area, _term: term });
+            }
+          }
+        }
+
+        // Fusionar impulsos en la misma posición
+        const merged = [];
+        for (const imp of impulses) {
+          const existing = merged.find((m) => Math.abs(m.t - imp.t) < 1e-3);
+          if (existing) {
+            existing.area += imp.area;
+          } else {
+            merged.push({ t: imp.t, area: imp.area });
+          }
+        }
+        return merged.filter((m) => Math.abs(m.area) > 1e-6);
+      }
+
+      /* =========================================================================
+         3. CATÁLOGO DE SEÑALES PREDEFINIDAS (CONTINUAS Y DISCRETAS)
+         ========================================================================= */
+      const PRESETS = {
+        continuous: [
+          {
+            id: 'damped_cos',
+            name: 'Coseno amortiguado causal: A·e^(-αt)·cos(ωt + φ)·u(t)',
+            params: [
+              { key: 'A', label: 'Amplitud A', min: -4, max: 4, step: 0.1, def: 2 },
+              { key: 'alpha', label: 'Amortiguamiento α', min: 0, max: 2, step: 0.05, def: 0.35 },
+              { key: 'freq', label: 'Frecuencia f (Hz)', min: 0.1, max: 4, step: 0.1, def: 0.8 },
+              { key: 'phi', label: 'Fase φ (rad)', min: -3.14, max: 3.14, step: 0.1, def: 0 }
+            ],
+            toExpr: (p) => `${fmtNum(p.A)}*exp(-${fmtNum(p.alpha)}*t)*cos(2*pi*${fmtNum(p.freq)}*t + ${fmtNum(p.phi)})*u(t)`
+          },
+          {
+            id: 'sine',
+            name: 'Senoidal pura: A·sin(2π·f·t + φ)',
+            params: [
+              { key: 'A', label: 'Amplitud A', min: -4, max: 4, step: 0.1, def: 1.5 },
+              { key: 'freq', label: 'Frecuencia f (Hz)', min: 0.1, max: 5, step: 0.1, def: 0.5 },
+              { key: 'phi', label: 'Fase φ (rad)', min: -3.14, max: 3.14, step: 0.1, def: 0 }
+            ],
+            toExpr: (p) => `${fmtNum(p.A)}*sin(2*pi*${fmtNum(p.freq)}*t + ${fmtNum(p.phi)})`
+          },
+          {
+            id: 'rect',
+            name: 'Pulso Rectangular: A·rect((t − t₀) / W)',
+            params: [
+              { key: 'A', label: 'Amplitud A', min: -4, max: 4, step: 0.1, def: 2 },
+              { key: 't0', label: 'Centro t₀', min: -5, max: 5, step: 0.25, def: 0 },
+              { key: 'W', label: 'Ancho W', min: 0.25, max: 6, step: 0.25, def: 2 }
+            ],
+            toExpr: (p) => `${fmtNum(p.A)}*rect((${formatShiftExpr('t', p.t0)})/${fmtNum(p.W)})`
+          },
+          {
+            id: 'tri',
+            name: 'Pulso Triangular: A·tri((t − t₀) / W)',
+            params: [
+              { key: 'A', label: 'Amplitud A', min: -4, max: 4, step: 0.1, def: 2 },
+              { key: 't0', label: 'Centro t₀', min: -5, max: 5, step: 0.25, def: 0 },
+              { key: 'W', label: 'Semi-base W', min: 0.25, max: 5, step: 0.25, def: 2 }
+            ],
+            toExpr: (p) => `${fmtNum(p.A)}*tri((${formatShiftExpr('t', p.t0)})/${fmtNum(p.W)})`
+          },
+          {
+            id: 'step',
+            name: 'Escalón Unitario: A·u(t − t₀)',
+            params: [
+              { key: 'A', label: 'Amplitud A', min: -4, max: 4, step: 0.1, def: 1.5 },
+              { key: 't0', label: 'Instante t₀', min: -5, max: 5, step: 0.25, def: 0 }
+            ],
+            toExpr: (p) => `${fmtNum(p.A)}*u(${formatShiftExpr('t', p.t0)})`
+          },
+          {
+            id: 'ramp',
+            name: 'Rampa Unitaria: A·r(t − t₀)',
+            params: [
+              { key: 'A', label: 'Pendiente A', min: -3, max: 3, step: 0.1, def: 1 },
+              { key: 't0', label: 'Inicio t₀', min: -5, max: 5, step: 0.25, def: 0 }
+            ],
+            toExpr: (p) => `${fmtNum(p.A)}*r(${formatShiftExpr('t', p.t0)})`
+          },
+          {
+            id: 'exp_causal',
+            name: 'Exponencial causal: A·e^(a·t)·u(t − t₀)',
+            params: [
+              { key: 'A', label: 'Amplitud A', min: -4, max: 4, step: 0.1, def: 2 },
+              { key: 'rate', label: 'Tasa a', min: -2.5, max: 1.5, step: 0.1, def: -0.8 },
+              { key: 't0', label: 'Inicio t₀', min: -4, max: 4, step: 0.25, def: 0 }
+            ],
+            toExpr: (p) => `${fmtNum(p.A)}*exp(${fmtNum(p.rate)}*(${formatShiftExpr('t', p.t0)}))*u(${formatShiftExpr('t', p.t0)})`
+          },
+          {
+            id: 'sinc_sig',
+            name: 'Función Sinc: A·sinc(B·(t − t₀))',
+            params: [
+              { key: 'A', label: 'Amplitud A', min: -4, max: 4, step: 0.1, def: 2 },
+              { key: 'B', label: 'Ancho de banda B', min: 0.25, max: 4, step: 0.25, def: 1 },
+              { key: 't0', label: 'Centro t₀', min: -4, max: 4, step: 0.25, def: 0 }
+            ],
+            toExpr: (p) => `${fmtNum(p.A)}*sinc(${fmtNum(p.B)}*(${formatShiftExpr('t', p.t0)}))`
+          },
+          {
+            id: 'dirac_sig',
+            name: 'Impulso de Dirac: A·δ(t − t₀)',
+            params: [
+              { key: 'A', label: 'Área / Peso A', min: -4, max: 4, step: 0.25, def: 2 },
+              { key: 't0', label: 'Posición t₀', min: -5, max: 5, step: 0.25, def: 1 }
+            ],
+            toExpr: (p) => `${fmtNum(p.A)}*delta(${formatShiftExpr('t', p.t0)})`
+          }
+        ],
+        discrete: [
+          {
+            id: 'exp_disc',
+            name: 'Exponencial discreta: A·rⁿ·u[n − n₀]',
+            params: [
+              { key: 'A', label: 'Amplitud A', min: -4, max: 4, step: 0.25, def: 2 },
+              { key: 'r', label: 'Base r', min: -1.3, max: 1.3, step: 0.05, def: 0.8 },
+              { key: 'n0', label: 'Inicio n₀', min: -6, max: 6, step: 1, def: 0 }
+            ],
+            toExpr: (p) => `${fmtNum(p.A)}*(${fmtNum(p.r)})^(${formatShiftExpr('n', p.n0)})*u(${formatShiftExpr('n', p.n0)})`
+          },
+          {
+            id: 'cos_disc',
+            name: 'Coseno discreto: A·cos(Ω₀·n + φ)',
+            params: [
+              { key: 'A', label: 'Amplitud A', min: -4, max: 4, step: 0.25, def: 2 },
+              { key: 'omega', label: 'Frec. angular Ω₀ (×π rad)', min: 0.05, max: 1.0, step: 0.05, def: 0.2 },
+              { key: 'phi', label: 'Fase φ (rad)', min: -3.14, max: 3.14, step: 0.1, def: 0 }
+            ],
+            toExpr: (p) => `${fmtNum(p.A)}*cos(${fmtNum(p.omega)}*pi*n + ${fmtNum(p.phi)})`
+          },
+          {
+            id: 'rect_disc',
+            name: 'Pulso rectangular: A·(u[n − n₁] − u[n − n₂])',
+            params: [
+              { key: 'A', label: 'Amplitud A', min: -4, max: 4, step: 0.25, def: 2 },
+              { key: 'n1', label: 'Inicio n₁', min: -8, max: 6, step: 1, def: 0 },
+              { key: 'n2', label: 'Fin (exclusivo) n₂', min: -4, max: 10, step: 1, def: 5 }
+            ],
+            toExpr: (p) => `${fmtNum(p.A)}*(u(${formatShiftExpr('n', p.n1)}) - u(${formatShiftExpr('n', p.n2)}))`
+          },
+          {
+            id: 'tri_disc',
+            name: 'Pulso triangular: A·tri((n − n₀) / W)',
+            params: [
+              { key: 'A', label: 'Amplitud A', min: -4, max: 4, step: 0.25, def: 3 },
+              { key: 'n0', label: 'Centro n₀', min: -5, max: 5, step: 1, def: 0 },
+              { key: 'W', label: 'Semi-ancho W', min: 1, max: 8, step: 1, def: 4 }
+            ],
+            toExpr: (p) => `${fmtNum(p.A)}*tri((${formatShiftExpr('n', p.n0)})/${fmtNum(p.W)})`
+          },
+          {
+            id: 'step_disc',
+            name: 'Escalón Unitario: A·u[n − n₀]',
+            params: [
+              { key: 'A', label: 'Amplitud A', min: -4, max: 4, step: 0.25, def: 1.5 },
+              { key: 'n0', label: 'Inicio n₀', min: -6, max: 6, step: 1, def: 0 }
+            ],
+            toExpr: (p) => `${fmtNum(p.A)}*u(${formatShiftExpr('n', p.n0)})`
+          },
+          {
+            id: 'impulse_disc',
+            name: 'Impulso Unitario: A·δ[n − n₀]',
+            params: [
+              { key: 'A', label: 'Amplitud A', min: -4, max: 4, step: 0.25, def: 2 },
+              { key: 'n0', label: 'Posición n₀', min: -8, max: 8, step: 1, def: 1 }
+            ],
+            toExpr: (p) => `${fmtNum(p.A)}*delta(${formatShiftExpr('n', p.n0)})`
+          },
+          {
+            id: 'ramp_disc',
+            name: 'Rampa discreta: A·r[n − n₀]',
+            params: [
+              { key: 'A', label: 'Pendiente A', min: -3, max: 3, step: 0.25, def: 0.5 },
+              { key: 'n0', label: 'Inicio n₀', min: -6, max: 6, step: 1, def: 0 }
+            ],
+            toExpr: (p) => `${fmtNum(p.A)}*r(${formatShiftExpr('n', p.n0)})`
+          }
+        ]
+      };
+
+      /* =========================================================================
+         4. ESTADO GLOBAL DE LA APLICACIÓN
+         ========================================================================= */
+      const state = {
+        domain: 'continuous', // 'continuous' | 'discrete'
+        operation: 'transform', // 'transform' | 'binary' | 'convolution' | 'evenodd' | 'calculus'
+        theme: 'light',
+        layoutMode: 'stacked', // 'stacked' | 'overlay'
+        activeTab: 'math', // 'math' | 'table'
+        drawDiscreteMode: false,
+
+        sig1: {
+          mode: 'preset', // 'preset' | 'expr' | 'seq'
+          presetId: 'tri',
+          presetParams: { A: 2, t0: 0, W: 2 },
+          expr: '2*tri(t/2)',
+          seqStart: -2,
+          seqValues: [1, 2, 3, 1.5, -1],
+          compiled: null,
+          error: null,
+          wrongVar: null
+        },
+
+        sig2: {
+          mode: 'preset',
+          presetId: 'rect',
+          presetParams: { A: 1, t0: 1, W: 2 },
+          expr: '1*rect((t - 1)/2)',
+          seqStart: 0,
+          seqValues: [1, -1, 2],
+          compiled: null,
+          error: null,
+          wrongVar: null
+        },
+
+        transform: {
+          A: 1,
+          a: 1,
+          b: 0,
+          C: 0,
+          showIntermediate: false,
+          order: 'shiftFirst'
+        },
+
+        binary: {
+          op: 'add', // 'add' | 'sub' | 'mul' | 'lincomb'
+          alpha: 1,
+          beta: 1
+        },
+
+        conv: {
+          type: 'conv', // 'conv' | 'xcorr' | 'acorr'
+          span: 12,
+          shift: 0,
+          playing: false,
+          speed: 1,
+          lastFrameTs: 0
+        },
+
+        calculus: {
+          op: 'deriv', // 'deriv' | 'integ'
+          lower: 'windowStart' // 'windowStart' | 'zero'
+        },
+
+        view: {
+          xMin: -6,
+          xMax: 6,
+          yMin: -3,
+          yMax: 4.5
+        },
+
+        visibility: {
+          x1: true,
+          x2: true,
+          mid: true,
+          y: true
+        },
+
+        pointer: {
+          inside: false,
+          xWorld: 0,
+          yWorld: 0,
+          draggingPan: false,
+          draggingStemIdx: null,
+          panStartX: 0,
+          panStartY: 0,
+          viewSnapshot: null
+        },
+
+        evalPoint: 1,
+        tableStep: 0.25,
+        cache: null // Almacena resultados calculados para la gráfica, métricas y tabla
+      };
+
+      /* =========================================================================
+         5. COMPILACIÓN DE SEÑALES Y EVALUADORES BASE
+         ========================================================================= */
+      function initPresetParams(sigObj, domain, presetId, preserveExpr = false) {
+        const list = PRESETS[domain];
+        const found = list.find((p) => p.id === presetId) || list[0];
+        sigObj.presetId = found.id;
+        const params = {};
+        for (const prm of found.params) {
+          params[prm.key] = prm.def;
+        }
+        sigObj.presetParams = params;
+        if (!preserveExpr) {
+          sigObj.expr = found.toExpr(params);
+        }
+      }
+
+      function compileSignal(sigObj, domain) {
+        sigObj.error = null;
+        sigObj.wrongVar = null;
+
+        if (domain === 'discrete' && sigObj.mode === 'seq') {
+          const n0 = Math.round(Number(sigObj.seqStart) || 0);
+          const vals = sigObj.seqValues;
+          sigObj.compiled = {
+            evaluate: (n) => {
+              if (!isNearInteger(n)) return 0;
+              const idx = Math.round(n) - n0;
+              return idx >= 0 && idx < vals.length ? vals[idx] : 0;
+            },
+            extractImpulses: () => []
+          };
+          return;
+        }
+
+        const list = PRESETS[domain];
+        let formula = sigObj.expr;
+        if (sigObj.mode === 'preset') {
+          const found = list.find((p) => p.id === sigObj.presetId) || list[0];
+          formula = found.toExpr(sigObj.presetParams);
+          sigObj.expr = formula;
+        }
+
+        try {
+          sigObj.compiled = compileExpression(formula, domain);
+        } catch (err) {
+          sigObj.error = err.message;
+          sigObj.wrongVar = err.wrongVar || null;
+          sigObj.compiled = {
+            evaluate: () => NaN,
+            extractImpulses: () => []
+          };
+        }
+      }
+
+      function evalSignalRaw(sigObj, x, domain) {
+        if (!sigObj.compiled) return NaN;
+        if (domain === 'discrete') {
+          if (!isNearInteger(x)) return 0;
+          return sigObj.compiled.evaluate(Math.round(x));
+        }
+        return sigObj.compiled.evaluate(x);
+      }
+
+      function getSignalFormulaText(sigObj, domain) {
+        if (domain === 'discrete' && sigObj.mode === 'seq') {
+          const n0 = Math.round(Number(sigObj.seqStart) || 0);
+          const list = sigObj.seqValues.map((v, i) => {
+            const idx = n0 + i;
+            return idx === 0 ? `<u>${fmtNum(v, 2)}</u>` : fmtNum(v, 2);
+          });
+          return `{ ${list.join(', ')} } (n₀ = ${n0})`;
+        }
+        return escapeHtml(sigObj.expr);
+      }
+
+      function getSignalFormulaPlain(sigObj, domain) {
+        if (domain === 'discrete' && sigObj.mode === 'seq') {
+          const n0 = Math.round(Number(sigObj.seqStart) || 0);
+          return `{ ${sigObj.seqValues.map((v) => fmtNum(v, 2)).join(', ')} } (n0=${n0})`;
+        }
+        return sigObj.expr;
+      }
+
+      /* =========================================================================
+         6. CÁLCULO PRINCIPAL DE OPERACIONES Y PROPIEDADES
+         ========================================================================= */
+      function computeAll() {
+        compileSignal(state.sig1, state.domain);
+        if (state.operation === 'binary' || state.operation === 'convolution') {
+          compileSignal(state.sig2, state.domain);
+        }
+
+        const isDisc = state.domain === 'discrete';
+        const xMin = state.view.xMin;
+        const xMax = state.view.xMax;
+        const pad = (xMax - xMin) * 0.25;
+        const scanMin = xMin - pad;
+        const scanMax = xMax + pad;
+
+        const f1 = (x) => evalSignalRaw(state.sig1, x, state.domain);
+        const f2 = (x) => evalSignalRaw(state.sig2, x, state.domain);
+
+        const imp1 = !isDisc && state.sig1.compiled ? state.sig1.compiled.extractImpulses(scanMin, scanMax) : [];
+        const imp2 = !isDisc && state.sig2.compiled ? state.sig2.compiled.extractImpulses(scanMin, scanMax) : [];
+
+        let fnMid = null;
+        let fnY = null;
+        let impMid = [];
+        let impY = [];
+        let convAux = null; // Datos del panel auxiliar de convolución
+        let mathInfo = { mainEq: '', subEq: '', steps: [] };
+
+        if (state.operation === 'transform') {
+          const { A, a, b, C, showIntermediate, order } = state.transform;
+          const v = isDisc ? 'n' : 't';
+          const brkL = isDisc ? '[' : '(';
+          const brkR = isDisc ? ']' : ')';
+
+          const evalTransformed = (fn, x) => {
+            const arg = a * x + b;
+            return A * fn(arg) + C;
+          };
+
+          fnY = (x) => evalTransformed(f1, x);
+
+          if (!isDisc && imp1.length > 0 && Math.abs(a) > 1e-8) {
+            impY = imp1.map((im) => ({
+              t: (im.t - b) / a,
+              area: (A * im.area) / Math.abs(a)
+            }));
+          }
+
+          if (showIntermediate) {
+            if (order === 'shiftFirst') {
+              fnMid = (x) => f1(x + b);
+              if (!isDisc) impMid = imp1.map((im) => ({ t: im.t - b, area: im.area }));
+            } else {
+              fnMid = (x) => f1(a * x);
+              if (!isDisc && Math.abs(a) > 1e-8) {
+                impMid = imp1.map((im) => ({ t: im.t / a, area: im.area / Math.abs(a) }));
+              }
+            }
+          }
+
+          // Ecuación dinámica y explicación paso a paso
+          const innerStr = buildAffineStr(a, v, b);
+          const prefixA = A === 1 ? '' : A === -1 ? '−' : `${fmtNum(A)}·`;
+          const suffixC = Math.abs(C) < 1e-9 ? '' : C > 0 ? ` + ${fmtNum(C)}` : ` − ${fmtNum(-C)}`;
+          mathInfo.mainEq = `y${brkL}${v}${brkR} = ${prefixA}x${brkL}${innerStr}${brkR}${suffixC}`;
+
+          if (Math.abs(a) > 1e-9 && Math.abs(b) > 1e-9) {
+            const shiftFactored = b / a;
+            const factoredStr = `${fmtNum(a)}(${buildShiftStr(v, shiftFactored)})`;
+            mathInfo.subEq = `Forma factorizada: y${brkL}${v}${brkR} = ${prefixA}x${brkL}${factoredStr}${brkR}${suffixC}`;
+          } else {
+            mathInfo.subEq = `Señal base: x${brkL}${v}${brkR} = ${getSignalFormulaPlain(state.sig1, state.domain)}`;
+          }
+
+          const steps = [];
+          if (Math.abs(a) < 1e-9) {
+            steps.push(`<b>Escala a = 0:</b> el argumento es constante (${fmtNum(b)}), produciendo una señal constante y = ${fmtNum(A * f1(b) + C)}.`);
+          } else {
+            if (a < 0) steps.push(`<b>Reflexión temporal (a &lt; 0):</b> la señal se invierte respecto al eje vertical.`);
+            if (Math.abs(a) > 1) {
+              steps.push(
+                isDisc
+                  ? `<b>Diezmado / compresión discreta (|a| = ${fmtNum(Math.abs(a))}):</b> se conservan las muestras donde a·n + b ∈ ℤ y se descartan las intermedias.`
+                  : `<b>Compresión temporal (|a| = ${fmtNum(Math.abs(a))}):</b> la señal transcurre ${fmtNum(Math.abs(a))} veces más rápido.`
+              );
+            } else if (Math.abs(a) < 1) {
+              steps.push(
+                isDisc
+                  ? `<b>Expansión temporal discreta (|a| = ${fmtNum(Math.abs(a))}):</b> cuando a·n + b no es entero el valor es 0 (inserción de ceros).`
+                  : `<b>Expansión temporal (|a| = ${fmtNum(Math.abs(a))}):</b> la señal se ensancha por un factor de ${fmtNum(1 / Math.abs(a))}.`
+              );
+            }
+            if (Math.abs(b) > 1e-9) {
+              const effShift = -b / a;
+              const dir = effShift > 0 ? 'a la derecha (atraso)' : 'a la izquierda (adelanto)';
+              steps.push(`<b>Desplazamiento efectivo:</b> ${fmtNum(Math.abs(effShift))} unidad(es) ${dir}, llevando el origen original t₀ = 0 hacia ${v} = ${fmtNum(effShift)}.`);
+            }
+            if (A !== 1) {
+              steps.push(`<b>Amplitud (A = ${fmtNum(A)}):</b> ${A < 0 ? 'inversión vertical y ' : ''}escalado de amplitud por |A| = ${fmtNum(Math.abs(A))}.`);
+            }
+            if (Math.abs(C) > 1e-9) {
+              steps.push(`<b>Nivel DC (C = ${fmtNum(C)}):</b> desplazamiento vertical de ${fmtNum(C)} unidades.`);
+            }
+            if (showIntermediate) {
+              steps.push(
+                order === 'shiftFirst'
+                  ? `<b>Paso intermedio (Ruta A):</b> la curva morada muestra v${brkL}${v}${brkR} = x${brkL}${buildShiftStr(v, b)}${brkR} antes de aplicar escala a = ${fmtNum(a)}.`
+                  : `<b>Paso intermedio (Ruta B):</b> la curva morada muestra w${brkL}${v}${brkR} = x${brkL}${fmtNum(a)}${v}${brkR} antes de desplazar por ${fmtNum(-b / a)}.`
+              );
+            }
+          }
+          if (steps.length === 0) steps.push('Transformación identidad: la salida coincide exactamente con la señal de entrada.');
+          mathInfo.steps = steps;
+        } else if (state.operation === 'binary') {
+          const { op, alpha, beta } = state.binary;
+          const v = isDisc ? 'n' : 't';
+          const brkL = isDisc ? '[' : '(';
+          const brkR = isDisc ? ']' : ')';
+
+          if (op === 'add') {
+            fnY = (x) => f1(x) + f2(x);
+            impY = mergeImpulses([...imp1, ...imp2]);
+            mathInfo.mainEq = `y${brkL}${v}${brkR} = x₁${brkL}${v}${brkR} + x₂${brkL}${v}${brkR}`;
+            mathInfo.steps = ['Suma punto a punto de las amplitudes de ambas señales en cada instante.'];
+          } else if (op === 'sub') {
+            fnY = (x) => f1(x) - f2(x);
+            impY = mergeImpulses([...imp1, ...imp2.map((m) => ({ t: m.t, area: -m.area }))]);
+            mathInfo.mainEq = `y${brkL}${v}${brkR} = x₁${brkL}${v}${brkR} − x₂${brkL}${v}${brkR}`;
+            mathInfo.steps = ['Diferencia instantánea entre la primera y la segunda señal.'];
+          } else if (op === 'mul') {
+            fnY = (x) => f1(x) * f2(x);
+            // Producto con impulso: f(t)·w·δ(t-t0) = f(t0)·w·δ(t-t0)
+            impY = mergeImpulses([
+              ...imp1.map((m) => ({ t: m.t, area: m.area * f2(m.t) })),
+              ...imp2.map((m) => ({ t: m.t, area: m.area * f1(m.t) }))
+            ]);
+            mathInfo.mainEq = `y${brkL}${v}${brkR} = x₁${brkL}${v}${brkR} · x₂${brkL}${v}${brkR}`;
+            mathInfo.steps = ['Multiplicación punto a punto (modulación de amplitud o ventaneo temporal).'];
+          } else {
+            fnY = (x) => alpha * f1(x) + beta * f2(x);
+            impY = mergeImpulses([
+              ...imp1.map((m) => ({ t: m.t, area: alpha * m.area })),
+              ...imp2.map((m) => ({ t: m.t, area: beta * m.area }))
+            ]);
+            mathInfo.mainEq = `y${brkL}${v}${brkR} = (${fmtNum(alpha)})·x₁${brkL}${v}${brkR} + (${fmtNum(beta)})·x₂${brkL}${v}${brkR}`;
+            mathInfo.steps = ['Combinación lineal ponderada por los escalares α y β.'];
+          }
+          mathInfo.subEq = `x₁ = ${getSignalFormulaPlain(state.sig1, state.domain)}   |   x₂ = ${getSignalFormulaPlain(state.sig2, state.domain)}`;
+        } else if (state.operation === 'evenodd') {
+          const v = isDisc ? 'n' : 't';
+          const brkL = isDisc ? '[' : '(';
+          const brkR = isDisc ? ']' : ')';
+
+          fnMid = (x) => 0.5 * (f1(x) + f1(-x)); // Parte par x_p
+          fnY = (x) => 0.5 * (f1(x) - f1(-x));   // Parte impar x_i
+          if (!isDisc && imp1.length > 0) {
+            impMid = mergeImpulses([
+              ...imp1.map((m) => ({ t: m.t, area: 0.5 * m.area })),
+              ...imp1.map((m) => ({ t: -m.t, area: 0.5 * m.area }))
+            ]);
+            impY = mergeImpulses([
+              ...imp1.map((m) => ({ t: m.t, area: 0.5 * m.area })),
+              ...imp1.map((m) => ({ t: -m.t, area: -0.5 * m.area }))
+            ]);
+          }
+          mathInfo.mainEq = `x${brkL}${v}${brkR} = xₚ${brkL}${v}${brkR} + xᵢ${brkL}${v}${brkR}`;
+          mathInfo.subEq = `xₚ${brkL}${v}${brkR} = ½[x${brkL}${v}${brkR} + x${brkL}−${v}${brkR}]   |   xᵢ${brkL}${v}${brkR} = ½[x${brkL}${v}${brkR} − x${brkL}−${v}${brkR}]`;
+          mathInfo.steps = [
+            'La <b>parte par xₚ</b> (morada) cumple simetría respecto al eje vertical: xₚ(−t) = xₚ(t).',
+            'La <b>parte impar xᵢ</b> (verde) cumple antisimetría respecto al origen: xᵢ(−t) = −xᵢ(t) y siempre vale 0 en el origen.',
+            'Propiedad ortogonal: la energía total cumple Eₓ = Eₓₚ + Eₓᵢ.'
+          ];
+        } else if (state.operation === 'calculus') {
+          const { op, lower } = state.calculus;
+          if (isDisc) {
+            if (op === 'deriv') {
+              fnY = (n) => f1(n) - f1(n - 1);
+              mathInfo.mainEq = 'y[n] = x[n] − x[n − 1]  (Primera diferencia hacia atrás)';
+              mathInfo.subEq = `x[n] = ${getSignalFormulaPlain(state.sig1, 'discrete')}`;
+              mathInfo.steps = [
+                'Análogo discreto de la derivada continua.',
+                'Por ejemplo, la primera diferencia del escalón u[n] produce exactamente el impulso δ[n].'
+              ];
+            } else {
+              const startN = lower === 'zero' ? 0 : Math.floor(xMin);
+              // Precomputar suma acumulada en rango entero amplio
+              const minK = Math.min(startN, Math.floor(scanMin)) - 5;
+              const maxK = Math.max(startN, Math.ceil(scanMax)) + 5;
+              const accMap = new Map();
+              let running = 0;
+              for (let k = startN; k <= maxK; k++) {
+                running += f1(k);
+                accMap.set(k, running);
+              }
+              if (lower === 'zero') {
+                for (let k = minK; k < 0; k++) accMap.set(k, 0);
+              } else {
+                let back = 0;
+                for (let k = startN - 1; k >= minK; k--) {
+                  back -= f1(k + 1);
+                  accMap.set(k, back);
+                }
+              }
+              fnY = (n) => {
+                const rn = Math.round(n);
+                return accMap.has(rn) ? accMap.get(rn) : 0;
+              };
+              mathInfo.mainEq = `y[n] = Σ x[k]  (desde k = ${lower === 'zero' ? '0' : Math.floor(xMin)} hasta n)`;
+              mathInfo.subEq = `Acumulador discreto de x[n] = ${getSignalFormulaPlain(state.sig1, 'discrete')}`;
+              mathInfo.steps = [
+                'Suma acumulada de las muestras hasta el índice n.',
+                'La acumulación del impulso δ[n] desde 0 produce el escalón unitario u[n].'
+              ];
+            }
+          } else {
+            if (op === 'deriv') {
+              // Muestreo fino para derivada con detección de discontinuidades -> impulsos de Dirac
+              const nSamples = 1600;
+              const dt = (scanMax - scanMin) / nSamples;
+              const xs = new Float64Array(nSamples + 1);
+              const fx = new Float64Array(nSamples + 1);
+              for (let i = 0; i <= nSamples; i++) {
+                xs[i] = scanMin + i * dt;
+                fx[i] = f1(xs[i]);
+              }
+              const derivVals = new Float64Array(nSamples + 1);
+              const jumps = [];
+
+              for (let i = 1; i < nSamples; i++) {
+                const d = (fx[i + 1] - fx[i - 1]) / (2 * dt);
+                derivVals[i] = d;
+              }
+              derivVals[0] = (fx[1] - fx[0]) / dt;
+              derivVals[nSamples] = (fx[nSamples] - fx[nSamples - 1]) / dt;
+
+              // Detectar saltos finitos frente a pendientes suaves adyacentes
+              let i = 2;
+              while (i < nSamples - 3) {
+                const leftDiff = Math.abs(fx[i - 1] - fx[i - 2]);
+                const rightDiff = Math.abs(fx[i + 3] - fx[i + 2]);
+                const spanJump = fx[i + 1] - fx[i - 1];
+                const localSmoothScale = Math.max(leftDiff, rightDiff);
+                if (
+                  Number.isFinite(spanJump) &&
+                  Number.isFinite(localSmoothScale) &&
+                  Math.abs(spanJump) > 0.08 &&
+                  Math.abs(spanJump) > 8 * localSmoothScale + 0.05 &&
+                  localSmoothScale < 0.15
+                ) {
+                  const tJump = xs[i];
+                  const leftStep = fx[i - 1] - fx[i - 2];
+                  const rightStep = fx[i + 3] - fx[i + 2];
+                  const pureJump = spanJump - leftStep - rightStep;
+                  jumps.push({ t: tJump, area: pureJump });
+                  // Suavizar el pico numérico alrededor del salto en la curva continua
+                  const leftSlope = leftStep / dt;
+                  const rightSlope = rightStep / dt;
+                  derivVals[i - 1] = leftSlope;
+                  derivVals[i] = leftSlope;
+                  derivVals[i + 1] = rightSlope;
+                  derivVals[i + 2] = rightSlope;
+                  i += 4;
+                } else {
+                  i++;
+                }
+              }
+
+              impY = mergeImpulses(jumps);
+              fnY = (t) => {
+                if (t <= scanMin) return derivVals[0];
+                if (t >= scanMax) return derivVals[nSamples];
+                const pos = (t - scanMin) / dt;
+                const idx = Math.floor(pos);
+                const frac = pos - idx;
+                return derivVals[idx] * (1 - frac) + derivVals[Math.min(nSamples, idx + 1)] * frac;
+              };
+
+              mathInfo.mainEq = 'y(t) = d/dt [ x(t) ]';
+              mathInfo.subEq = `x(t) = ${getSignalFormulaPlain(state.sig1, 'continuous')}`;
+              mathInfo.steps = [
+                'Se calcula la derivada temporal numérica centrada.',
+                impY.length > 0
+                  ? `Se detectaron <b>${impY.length} discontinuidad(es) de salto</b> representadas como impulsos de Dirac (flechas rojas): ${impY.map((m) => `${fmtNum(m.area, 2)}·δ(t ${m.t >= 0 ? '− ' + fmtNum(m.t, 2) : '+ ' + fmtNum(-m.t, 2)})`).join(', ')}.`
+                  : 'La señal no presenta discontinuidades de salto finitas en la ventana visible.'
+              ];
+            } else {
+              // Integral acumulada
+              const startT = lower === 'zero' ? 0 : xMin;
+              const loBound = Math.min(startT, scanMin);
+              const hiBound = Math.max(startT, scanMax);
+              const nSamples = 1600;
+              const dt = (hiBound - loBound) / nSamples;
+              const xs = new Float64Array(nSamples + 1);
+              const area = new Float64Array(nSamples + 1);
+              for (let i = 0; i <= nSamples; i++) xs[i] = loBound + i * dt;
+
+              // Integrar desde startT hacia adelante y atrás
+              const startIdx = Math.max(0, Math.min(nSamples, Math.round((startT - loBound) / dt)));
+              area[startIdx] = 0;
+              for (let i = startIdx + 1; i <= nSamples; i++) {
+                const v0 = f1(xs[i - 1]);
+                const v1 = f1(xs[i]);
+                const inc = Number.isFinite(v0) && Number.isFinite(v1) ? 0.5 * (v0 + v1) * dt : 0;
+                area[i] = area[i - 1] + inc;
+              }
+              for (let i = startIdx - 1; i >= 0; i--) {
+                if (lower === 'zero') {
+                  area[i] = 0;
+                } else {
+                  const v0 = f1(xs[i]);
+                  const v1 = f1(xs[i + 1]);
+                  const inc = Number.isFinite(v0) && Number.isFinite(v1) ? 0.5 * (v0 + v1) * dt : 0;
+                  area[i] = area[i + 1] - inc;
+                }
+              }
+
+              // Incorporar escalones debidos a impulsos de Dirac en x1
+              fnY = (t) => {
+                let base = 0;
+                if (t <= loBound) base = area[0];
+                else if (t >= hiBound) base = area[nSamples];
+                else {
+                  const pos = (t - loBound) / dt;
+                  const idx = Math.floor(pos);
+                  const frac = pos - idx;
+                  base = area[idx] * (1 - frac) + area[Math.min(nSamples, idx + 1)] * frac;
+                }
+                if (lower === 'zero' && t < 0) return 0;
+                for (const imp of imp1) {
+                  if (imp.t >= startT - 1e-6 && t >= imp.t) base += imp.area;
+                }
+                return base;
+              };
+
+              mathInfo.mainEq = `y(t) = ∫ x(τ) dτ  (límite inferior tₐ = ${fmtNum(startT, 2)})`;
+              mathInfo.subEq = `Integral acumulada de x(t) = ${getSignalFormulaPlain(state.sig1, 'continuous')}`;
+              mathInfo.steps = [
+                'Se integra por regla del trapecio en alta resolución.',
+                imp1.length > 0 ? 'Los impulsos de Dirac δ(t − t₀) en x(t) aportan saltos de tipo escalón en y(t).' : 'Por ejemplo, la integral del escalón u(t) desde 0 produce la rampa r(t).'
+              ];
+            }
+          }
+        } else if (state.operation === 'convolution') {
+          const { type, span, shift } = state.conv;
+          const isCorr = type === 'xcorr' || type === 'acorr';
+          const useSig2 = type === 'acorr' ? f1 : f2;
+          const useImp2 = type === 'acorr' ? imp1 : imp2;
+
+          if (isDisc) {
+            const L = Math.max(4, Math.min(40, Math.round(span)));
+            const minN = Math.min(Math.floor(scanMin), -L);
+            const maxN = Math.max(Math.ceil(scanMax), L);
+            const yMap = new Map();
+
+            for (let n = minN; n <= maxN; n++) {
+              let sum = 0;
+              for (let k = -L; k <= L; k++) {
+                const v1 = f1(k);
+                const v2 = isCorr ? useSig2(k - n) : useSig2(n - k);
+                sum += v1 * v2;
+              }
+              yMap.set(n, sum);
+            }
+
+            fnY = (n) => {
+              const rn = Math.round(n);
+              if (yMap.has(rn)) return yMap.get(rn);
+              let sum = 0;
+              for (let k = -L; k <= L; k++) {
+                sum += f1(k) * (isCorr ? useSig2(k - rn) : useSig2(rn - k));
+              }
+              return sum;
+            };
+
+            const n0 = Math.round(shift);
+            const prodTerms = [];
+            for (let k = -L; k <= L; k++) {
+              const v1 = f1(k);
+              const v2 = isCorr ? useSig2(k - n0) : useSig2(n0 - k);
+              const p = v1 * v2;
+              if (Math.abs(p) > 1e-9) {
+                prodTerms.push(`(${fmtNum(v1, 2)})·(${fmtNum(v2, 2)})`);
+              }
+            }
+
+            convAux = {
+              isDiscrete: true,
+              shift: n0,
+              fLeft: f1,
+              fRight: (k) => (isCorr ? useSig2(k - n0) : useSig2(n0 - k)),
+              fProd: (k) => f1(k) * (isCorr ? useSig2(k - n0) : useSig2(n0 - k)),
+              yAtShift: fnY(n0),
+              breakdown: prodTerms.length > 0 ? prodTerms.slice(0, 8).join(' + ') + (prodTerms.length > 8 ? ' + ...' : '') : '0'
+            };
+
+            if (type === 'conv') {
+              mathInfo.mainEq = 'y[n] = (x₁ * x₂)[n] = Σ x₁[k]·x₂[n − k]';
+            } else if (type === 'xcorr') {
+              mathInfo.mainEq = 'Rₓ₁ₓ₂[n] = Σ x₁[k]·x₂[k − n]';
+            } else {
+              mathInfo.mainEq = 'Rₓ₁ₓ₁[n] = Σ x₁[k]·x₁[k − n]';
+            }
+            mathInfo.subEq = `Sumatoria evaluada sobre k ∈ [−${L}, +${L}]  |  En n₀ = ${n0}: y[${n0}] = ${fmtNum(convAux.yAtShift, 3)}`;
+            mathInfo.steps = [
+              type === 'conv'
+                ? '<b>Reflejar y deslizar:</b> se refleja x₂[k] → x₂[−k], se desplaza n₀ posiciones → x₂[n₀ − k] y se suman los productos.'
+                : '<b>Correlación:</b> se desliza la segunda señal sin reflejar (k − n₀) para medir su similitud según el desfase n₀.',
+              `Cálculo explícito en n₀ = ${n0}: ${convAux.breakdown} = <b>${fmtNum(convAux.yAtShift, 3)}</b>.`
+            ];
+          } else {
+            // Convolución / Correlación continua mediante regla del punto medio en [-L, L]
+            const L = Math.max(5, Math.min(35, Number(span) || 12));
+            const dt = 0.025;
+            const halfN = Math.round(L / dt);
+            const len = 2 * halfN + 1;
+            const g1 = new Float64Array(len);
+            const g2 = new Float64Array(len);
+
+            for (let i = 0; i < len; i++) {
+              const tau1 = (i - halfN + 0.5) * dt;
+              const tau2 = isCorr ? tau1 : (i - halfN - 0.5) * dt;
+              const v1 = f1(tau1);
+              const v2 = useSig2(tau2);
+              g1[i] = Number.isFinite(v1) ? v1 : 0;
+              g2[i] = Number.isFinite(v2) ? v2 : 0;
+            }
+
+            const outMin = Math.min(-L, Math.floor(scanMin));
+            const outMax = Math.max(L, Math.ceil(scanMax));
+            const outCount = Math.ceil((outMax - outMin) / dt) + 1;
+            const yArr = new Float64Array(outCount);
+
+            for (let oi = 0; oi < outCount; oi++) {
+              const t = outMin + oi * dt;
+              const shiftIdx = Math.round(t / dt);
+              let sum = 0;
+              // Producto interno rápido
+              if (!isCorr) {
+                // Suma g1[i] * g2[shiftIdx - (i - halfN) + halfN]
+                const offset = shiftIdx + 2 * halfN;
+                const iStart = Math.max(0, offset - (len - 1));
+                const iEnd = Math.min(len - 1, offset);
+                for (let i = iStart; i <= iEnd; i++) {
+                  sum += g1[i] * g2[offset - i];
+                }
+              } else {
+                // Correlación: g1[i] * g2[i - shiftIdx]
+                const iStart = Math.max(0, shiftIdx);
+                const iEnd = Math.min(len - 1, len - 1 + shiftIdx);
+                for (let i = iStart; i <= iEnd; i++) {
+                  sum += g1[i] * g2[i - shiftIdx];
+                }
+              }
+              let val = sum * dt;
+
+              // Contribución analítica de impulsos de Dirac si existen
+              for (const im1 of imp1) {
+                val += im1.area * (isCorr ? useSig2(im1.t - t) : useSig2(t - im1.t));
+              }
+              for (const im2 of useImp2) {
+                val += im2.area * (isCorr ? f1(im2.t + t) : f1(t - im2.t));
+              }
+              yArr[oi] = val;
+            }
+
+            // Si ambas tienen impulsos δ(t-a)*δ(t-b) -> impulso δ(t-(a+b))
+            if (!isCorr && imp1.length > 0 && useImp2.length > 0) {
+              const convImps = [];
+              for (const im1 of imp1) {
+                for (const im2 of useImp2) {
+                  convImps.push({ t: im1.t + im2.t, area: im1.area * im2.area });
+                }
+              }
+              impY = mergeImpulses(convImps);
+            }
+
+            fnY = (t) => {
+              if (t <= outMin) return yArr[0];
+              if (t >= outMin + (outCount - 1) * dt) return yArr[outCount - 1];
+              const pos = (t - outMin) / dt;
+              const idx = Math.floor(pos);
+              const frac = pos - idx;
+              return yArr[idx] * (1 - frac) + yArr[Math.min(outCount - 1, idx + 1)] * frac;
+            };
+
+            const t0 = shift;
+            convAux = {
+              isDiscrete: false,
+              shift: t0,
+              fLeft: f1,
+              fRight: (tau) => (isCorr ? useSig2(tau - t0) : useSig2(t0 - tau)),
+              fProd: (tau) => f1(tau) * (isCorr ? useSig2(tau - t0) : useSig2(t0 - tau)),
+              yAtShift: fnY(t0)
+            };
+
+            if (type === 'conv') {
+              mathInfo.mainEq = 'y(t) = (x₁ * x₂)(t) = ∫ x₁(τ)·x₂(t − τ) dτ';
+            } else if (type === 'xcorr') {
+              mathInfo.mainEq = 'Rₓ₁ₓ₂(t) = ∫ x₁(τ)·x₂(τ − t) dτ';
+            } else {
+              mathInfo.mainEq = 'Rₓ₁ₓ₁(t) = ∫ x₁(τ)·x₁(τ − t) dτ';
+            }
+            mathInfo.subEq = `Integración en τ ∈ [−${L}, +${L}] (Δτ = ${dt})  |  En t₀ = ${fmtNum(t0, 2)}: y(${fmtNum(t0, 2)}) = ${fmtNum(convAux.yAtShift, 3)}`;
+            mathInfo.steps = [
+              type === 'conv'
+                ? '<b>Panel superior:</b> muestra x₁(τ) en azul, x₂(t₀ − τ) reflejada y desplazada en naranja, y el área producto sombreada.'
+                : '<b>Panel superior:</b> muestra x₁(τ) y la señal desplazada x₂(τ − t₀); el área producto es el valor de correlación.',
+              '<b>Panel inferior:</b> traza el resultado completo; el punto resaltado corresponde al instante t₀ actual.'
+            ];
+          }
+        }
+
+        const metrics = computeMetrics(fnY, impY, xMin, xMax, isDisc);
+        state.cache = { f1, f2, fnMid, fnY, imp1, imp2, impMid, impY, convAux, mathInfo, metrics };
+      }
+
+      function mergeImpulses(list) {
+        const merged = [];
+        for (const item of list) {
+          if (!Number.isFinite(item.t) || !Number.isFinite(item.area)) continue;
+          const found = merged.find((m) => Math.abs(m.t - item.t) < 1e-3);
+          if (found) found.area += item.area;
+          else merged.push({ t: item.t, area: item.area });
+        }
+        return merged.filter((m) => Math.abs(m.area) > 1e-6);
+      }
+
+      function buildAffineStr(a, v, b) {
+        let aPart = '';
+        if (Math.abs(a - 1) < 1e-9) aPart = v;
+        else if (Math.abs(a + 1) < 1e-9) aPart = `−${v}`;
+        else aPart = `${fmtNum(a)}${v}`;
+
+        if (Math.abs(b) < 1e-9) return aPart;
+        return b > 0 ? `${aPart} + ${fmtNum(b)}` : `${aPart} − ${fmtNum(-b)}`;
+      }
+
+      function buildShiftStr(v, val) {
+        if (Math.abs(val) < 1e-9) return v;
+        return val > 0 ? `${v} + ${fmtNum(val)}` : `${v} − ${fmtNum(-val)}`;
+      }
+
+      function computeMetrics(fnY, impY, xMin, xMax, isDisc) {
+        let energy = 0;
+        let sumVal = 0;
+        let minVal = Infinity;
+        let maxVal = -Infinity;
+        let minAt = 0;
+        let maxAt = 0;
+        let count = 0;
+        let causal = true;
+        let symEvenDiff = 0;
+        let symOddDiff = 0;
+        let symRef = 0;
+
+        if (isDisc) {
+          const nStart = Math.ceil(xMin);
+          const nEnd = Math.floor(xMax);
+          for (let n = nStart; n <= nEnd; n++) {
+            const y = fnY(n);
+            if (!Number.isFinite(y)) continue;
+            energy += y * y;
+            sumVal += y;
+            count++;
+            if (y < minVal) { minVal = y; minAt = n; }
+            if (y > maxVal) { maxVal = y; maxAt = n; }
+            if (n < 0 && Math.abs(y) > 1e-5) causal = false;
+          }
+          const symMax = Math.min(Math.abs(nStart), Math.abs(nEnd), 20);
+          for (let n = 0; n <= symMax; n++) {
+            const yp = fnY(n);
+            const ym = fnY(-n);
+            if (Number.isFinite(yp) && Number.isFinite(ym)) {
+              symEvenDiff += Math.abs(yp - ym);
+              symOddDiff += Math.abs(yp + ym);
+              symRef += Math.abs(yp) + Math.abs(ym);
+            }
+          }
+          const power = count > 0 ? energy / count : 0;
+          const mean = count > 0 ? sumVal / count : 0;
+          const rms = Math.sqrt(power);
+          const symmetry = classifySymmetry(symEvenDiff, symOddDiff, symRef);
+          return { energy, power, mean, rms, minVal, maxVal, minAt, maxAt, causal, symmetry, hasDirac: false };
+        } else {
+          const N = 600;
+          const span = xMax - xMin;
+          const dt = span / N;
+          for (let i = 0; i <= N; i++) {
+            const t = xMin + i * dt;
+            const y = fnY(t);
+            if (!Number.isFinite(y)) continue;
+            const w = i === 0 || i === N ? 0.5 : 1;
+            energy += w * y * y * dt;
+            sumVal += w * y * dt;
+            count++;
+            if (y < minVal) { minVal = y; minAt = t; }
+            if (y > maxVal) { maxVal = y; maxAt = t; }
+            if (t < -1e-4 && Math.abs(y) > 1e-4) causal = false;
+          }
+          for (const imp of impY) {
+            if (imp.t < -1e-4) causal = false;
+          }
+          const symMax = Math.min(Math.abs(xMin), Math.abs(xMax));
+          if (symMax > 0.2) {
+            const symSteps = 120;
+            for (let i = 0; i <= symSteps; i++) {
+              const t = (i / symSteps) * symMax;
+              const yp = fnY(t);
+              const ym = fnY(-t);
+              if (Number.isFinite(yp) && Number.isFinite(ym)) {
+                symEvenDiff += Math.abs(yp - ym);
+                symOddDiff += Math.abs(yp + ym);
+                symRef += Math.abs(yp) + Math.abs(ym);
+              }
+            }
+          }
+          const power = span > 0 ? energy / span : 0;
+          const mean = span > 0 ? sumVal / span : 0;
+          const rms = Math.sqrt(Math.max(0, power));
+          const symmetry = classifySymmetry(symEvenDiff, symOddDiff, symRef);
+          return { energy, power, mean, rms, minVal, maxVal, minAt, maxAt, causal, symmetry, hasDirac: impY.length > 0 };
+        }
+      }
+
+      function classifySymmetry(evenDiff, oddDiff, ref) {
+        if (ref < 1e-5) return 'Señal nula (Par e Impar)';
+        if (evenDiff / ref < 0.015) return 'Par (Simétrica)';
+        if (oddDiff / ref < 0.015) return 'Impar (Antisimétrica)';
+        return 'Asimétrica';
+      }
+
+      /* =========================================================================
+         7. MOTOR GRÁFICO CANVAS 2D DESDE CERO (HIGH-DPI, ZOOM, PAN, TALLOS, DIRAC)
+         ========================================================================= */
+      const canvas = document.getElementById('signalCanvas');
+      const ctx = canvas.getContext('2d');
+      const canvasStage = document.getElementById('canvasStage');
+
+      function getCssVar(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      }
+
+      function niceStep(range, targetTicks = 8) {
+        const rough = range / targetTicks;
+        const mag = Math.pow(10, Math.floor(Math.log10(Math.max(1e-12, rough))));
+        const norm = rough / mag;
+        let nice = 1;
+        if (norm < 1.5) nice = 1;
+        else if (norm < 3) nice = 2;
+        else if (norm < 7) nice = 5;
+        else nice = 10;
+        return nice * mag;
+      }
+
+      function getActivePanels() {
+        const c = state.cache;
+        if (!c) return [];
+        const isDisc = state.domain === 'discrete';
+        const v = isDisc ? 'n' : 't';
+        const brkL = isDisc ? '[' : '(';
+        const brkR = isDisc ? ']' : ')';
+
+        if (state.operation === 'convolution') {
+          const tau = isDisc ? 'k' : 'τ';
+          const shift = c.convAux ? c.convAux.shift : 0;
+          const isCorr = state.conv.type !== 'conv';
+          const rightLabel = isCorr
+            ? `x₂(${tau} ${shift >= 0 ? '− ' + fmtNum(shift, 2) : '+ ' + fmtNum(-shift, 2)})`
+            : `x₂(${fmtNum(shift, 2)} − ${tau})`;
+
+          return [
+            {
+              title: isDisc ? `Paso en n₀ = ${Math.round(shift)} (k)` : `Integrando en t₀ = ${fmtNum(shift, 2)} (τ)`,
+              xLabel: tau,
+              traces: [
+                { id: 'x1', label: `x₁${brkL}${tau}${brkR}`, fn: c.convAux.fLeft, imps: [], color: getCssVar('--sig-x1'), fill: getCssVar('--sig-x1-fill'), visible: state.visibility.x1, width: 2 },
+                { id: 'x2', label: rightLabel, fn: c.convAux.fRight, imps: [], color: getCssVar('--sig-x2'), fill: getCssVar('--sig-x2-fill'), visible: state.visibility.x2, width: 2, dashed: true },
+                { id: 'prod', label: 'Producto', fn: c.convAux.fProd, imps: [], color: getCssVar('--sig-mid'), fill: getCssVar('--sig-mid-fill'), visible: true, width: 2, shadeArea: true }
+              ],
+              markerX: null
+            },
+            {
+              title: state.conv.type === 'conv' ? `Resultado de Convolución y${brkL}${v}${brkR}` : `Resultado de Correlación R${brkL}${v}${brkR}`,
+              xLabel: v,
+              traces: [
+                { id: 'y', label: `y${brkL}${v}${brkR}`, fn: c.fnY, imps: c.impY, color: getCssVar('--sig-y'), fill: getCssVar('--sig-y-fill'), visible: state.visibility.y, width: 2.6 }
+              ],
+              markerX: shift
+            }
+          ];
+        }
+
+        const allTraces = [];
+        const showX1 = state.operation !== 'evenodd' || state.visibility.x1;
+        allTraces.push({
+          id: 'x1',
+          label: state.operation === 'binary' ? `x₁${brkL}${v}${brkR}` : `x${brkL}${v}${brkR}`,
+          fn: c.f1,
+          imps: c.imp1,
+          color: getCssVar('--sig-x1'),
+          fill: getCssVar('--sig-x1-fill'),
+          visible: state.visibility.x1,
+          width: 2,
+          dashed: state.layoutMode === 'overlay' && state.operation === 'transform'
+        });
+
+        if (state.operation === 'binary') {
+          allTraces.push({
+            id: 'x2',
+            label: `x₂${brkL}${v}${brkR}`,
+            fn: c.f2,
+            imps: c.imp2,
+            color: getCssVar('--sig-x2'),
+            fill: getCssVar('--sig-x2-fill'),
+            visible: state.visibility.x2,
+            width: 2
+          });
+        }
+
+        if (c.fnMid) {
+          allTraces.push({
+            id: 'mid',
+            label: state.operation === 'evenodd' ? `Par xₚ${brkL}${v}${brkR}` : `Intermedia`,
+            fn: c.fnMid,
+            imps: c.impMid,
+            color: getCssVar('--sig-mid'),
+            fill: getCssVar('--sig-mid-fill'),
+            visible: state.visibility.mid,
+            width: 2.1,
+            dashed: state.operation === 'transform'
+          });
+        }
+
+        allTraces.push({
+          id: 'y',
+          label: state.operation === 'evenodd' ? `Impar xᵢ${brkL}${v}${brkR}` : `y${brkL}${v}${brkR}`,
+          fn: c.fnY,
+          imps: c.impY,
+          color: getCssVar('--sig-y'),
+          fill: getCssVar('--sig-y-fill'),
+          visible: state.visibility.y,
+          width: 2.6
+        });
+
+        if (state.layoutMode === 'overlay') {
+          return [{ title: 'Gráfica Combinada', xLabel: v, traces: allTraces, markerX: null }];
+        }
+
+        // Vista apilada sincronizada
+        const panels = [];
+        const t1 = allTraces.find((t) => t.id === 'x1');
+        if (t1 && t1.visible) panels.push({ title: `Entrada ${t1.label}`, xLabel: v, traces: [t1], interactiveDraw: true });
+        const t2 = allTraces.find((t) => t.id === 'x2');
+        if (t2 && t2.visible) panels.push({ title: `Entrada ${t2.label}`, xLabel: v, traces: [t2] });
+        const tMid = allTraces.find((t) => t.id === 'mid');
+        if (tMid && tMid.visible) panels.push({ title: tMid.label, xLabel: v, traces: [tMid] });
+        const tY = allTraces.find((t) => t.id === 'y');
+        if (tY && tY.visible) panels.push({ title: `Salida ${tY.label}`, xLabel: v, traces: [tY] });
+        if (panels.length === 0) panels.push({ title: 'Sin señales visibles', xLabel: v, traces: [] });
+        return panels;
+      }
+
+      function renderCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvasStage.getBoundingClientRect();
+        const w = Math.max(200, Math.round(rect.width));
+        const h = Math.max(200, Math.round(rect.height));
+
+        if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+          canvas.width = Math.round(w * dpr);
+          canvas.height = Math.round(h * dpr);
+        }
+
+        ctx.save();
+        ctx.scale(dpr, dpr);
+
+        const bg = getCssVar('--canvas-bg');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, w, h);
+
+        const panels = getActivePanels();
+        const wantTall = panels.length >= 3 || state.operation === 'convolution';
+        canvasStage.classList.toggle('tall', wantTall);
+
+        const padLeft = 54;
+        const padRight = 18;
+        const padTop = 14;
+        const padBottom = 26;
+        const gap = 14;
+        const totalAvailH = h - padTop - padBottom - gap * Math.max(0, panels.length - 1);
+        const panelH = Math.max(90, totalAvailH / Math.max(1, panels.length));
+
+        panels.forEach((panel, idx) => {
+          const top = padTop + idx * (panelH + gap);
+          const box = { x: padLeft, y: top, w: w - padLeft - padRight, h: panelH };
+          panel._box = box;
+          drawPanel(panel, box);
+        });
+
+        state._lastPanels = panels;
+        ctx.restore();
+      }
+
+      function drawPanel(panel, box) {
+        const { xMin, xMax, yMin, yMax } = state.view;
+        const isDisc = state.domain === 'discrete';
+        const mapX = (xw) => box.x + ((xw - xMin) / (xMax - xMin)) * box.w;
+        const mapY = (yw) => box.y + box.h - ((yw - yMin) / (yMax - yMin)) * box.h;
+
+        // Fondo y borde del subpanel
+        ctx.save();
+        ctx.strokeStyle = getCssVar('--border');
+        ctx.lineWidth = 1;
+        ctx.strokeRect(box.x, box.y, box.w, box.h);
+
+        ctx.beginPath();
+        ctx.rect(box.x, box.y, box.w, box.h);
+        ctx.clip();
+
+        // Cuadrícula X
+        const xSpan = xMax - xMin;
+        const xStep = isDisc && xSpan <= 36 ? (xSpan <= 18 ? 1 : 2) : niceStep(xSpan, 9);
+        const xStart = Math.ceil(xMin / xStep) * xStep;
+
+        ctx.strokeStyle = getCssVar('--grid-major');
+        ctx.lineWidth = 1;
+        for (let gx = xStart; gx <= xMax + 1e-9; gx += xStep) {
+          const px = mapX(gx);
+          ctx.beginPath();
+          ctx.moveTo(px, box.y);
+          ctx.lineTo(px, box.y + box.h);
+          ctx.stroke();
+        }
+
+        // Cuadrícula Y
+        const ySpan = yMax - yMin;
+        const yStep = niceStep(ySpan, 5);
+        const yStart = Math.ceil(yMin / yStep) * yStep;
+        for (let gy = yStart; gy <= yMax + 1e-9; gy += yStep) {
+          const py = mapY(gy);
+          ctx.beginPath();
+          ctx.moveTo(box.x, py);
+          ctx.lineTo(box.x + box.w, py);
+          ctx.stroke();
+        }
+
+        // Ejes principales x=0 e y=0
+        ctx.strokeStyle = getCssVar('--axis-color');
+        ctx.lineWidth = 1.4;
+        if (xMin <= 0 && xMax >= 0) {
+          const px0 = mapX(0);
+          ctx.beginPath();
+          ctx.moveTo(px0, box.y);
+          ctx.lineTo(px0, box.y + box.h);
+          ctx.stroke();
+        }
+        if (yMin <= 0 && yMax >= 0) {
+          const py0 = mapY(0);
+          ctx.beginPath();
+          ctx.moveTo(box.x, py0);
+          ctx.lineTo(box.x + box.w, py0);
+          ctx.stroke();
+        }
+
+        // Dibujar trazas
+        const visibleTraces = panel.traces.filter((t) => t.visible);
+        visibleTraces.forEach((tr, tIdx) => {
+          if (isDisc) {
+            drawDiscreteTrace(tr, box, mapX, mapY, tIdx, visibleTraces.length);
+          } else {
+            drawContinuousTrace(tr, box, mapX, mapY);
+            drawDiracImpulses(tr.imps || [], box, mapX, mapY);
+          }
+        });
+
+        // Marcador de tiempo actual en convolución
+        if (panel.markerX !== null && panel.markerX !== undefined && state.cache) {
+          const mx = mapX(panel.markerX);
+          const myVal = state.cache.fnY(panel.markerX);
+          const my = mapY(myVal);
+          ctx.strokeStyle = getCssVar('--sig-y');
+          ctx.setLineDash([4, 4]);
+          ctx.lineWidth = 1.3;
+          ctx.beginPath();
+          ctx.moveTo(mx, box.y);
+          ctx.lineTo(mx, box.y + box.h);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          if (Number.isFinite(myVal)) {
+            ctx.fillStyle = getCssVar('--sig-y');
+            ctx.beginPath();
+            ctx.arc(mx, my, 5.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = getCssVar('--canvas-bg');
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
+        }
+
+        // Crosshair del cursor
+        if (state.pointer.inside) {
+          const cx = mapX(state.pointer.xWorld);
+          if (cx >= box.x && cx <= box.x + box.w) {
+            ctx.strokeStyle = getCssVar('--text-light');
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(cx, box.y);
+            ctx.lineTo(cx, box.y + box.h);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+        }
+
+        // Etiqueta del panel en esquina superior izquierda
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = getCssVar('--bg-panel');
+        ctx.globalAlpha = 0.88;
+        ctx.font = '600 11px "Segoe UI", sans-serif';
+        const titleW = ctx.measureText(panel.title).width + 14;
+        ctx.fillRect(box.x + 6, box.y + 6, titleW, 20);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = getCssVar('--text-main');
+        ctx.fillText(panel.title, box.x + 13, box.y + 20);
+
+        ctx.restore();
+
+        // Etiquetas numéricas fuera del clip
+        ctx.fillStyle = getCssVar('--axis-label');
+        ctx.font = '11px "Cascadia Code", Consolas, monospace';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        for (let gy = yStart; gy <= yMax + 1e-9; gy += yStep) {
+          const py = mapY(gy);
+          if (py >= box.y + 6 && py <= box.y + box.h - 6) {
+            ctx.fillText(fmtNum(gy, 2), box.x - 6, py);
+          }
+        }
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        for (let gx = xStart; gx <= xMax + 1e-9; gx += xStep) {
+          const px = mapX(gx);
+          if (px >= box.x + 10 && px <= box.x + box.w - 10) {
+            ctx.fillText(fmtNum(gx, isDisc ? 0 : 2), px, box.y + box.h + 5);
+          }
+        }
+      }
+
+      function drawContinuousTrace(tr, box, mapX, mapY) {
+        const { xMin, xMax, yMin, yMax } = state.view;
+        const samples = Math.min(1800, Math.max(400, Math.round(box.w * 2)));
+        const yZero = Math.max(box.y, Math.min(box.y + box.h, mapY(0)));
+        const jumpBreak = (yMax - yMin) * 8;
+
+        const pts = [];
+        for (let i = 0; i <= samples; i++) {
+          const xw = xMin + (i / samples) * (xMax - xMin);
+          const yw = tr.fn(xw);
+          pts.push({ px: mapX(xw), py: mapY(yw), yw });
+        }
+
+        if (tr.shadeArea || tr.fill) {
+          ctx.save();
+          ctx.fillStyle = tr.fill;
+          ctx.beginPath();
+          let open = false;
+          let lastPx = 0;
+          for (let i = 0; i < pts.length; i++) {
+            const p = pts[i];
+            if (!Number.isFinite(p.yw)) {
+              if (open) {
+                ctx.lineTo(lastPx, yZero);
+                ctx.closePath();
+                ctx.fill();
+                ctx.beginPath();
+                open = false;
+              }
+              continue;
+            }
+            const clampedPy = Math.max(box.y - 40, Math.min(box.y + box.h + 40, p.py));
+            if (!open) {
+              ctx.moveTo(p.px, yZero);
+              ctx.lineTo(p.px, clampedPy);
+              open = true;
+            } else {
+              ctx.lineTo(p.px, clampedPy);
+            }
+            lastPx = p.px;
+          }
+          if (open) {
+            ctx.lineTo(lastPx, yZero);
+            ctx.closePath();
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+
+        ctx.save();
+        ctx.strokeStyle = tr.color;
+        ctx.lineWidth = tr.width || 2.2;
+        if (tr.dashed) ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        let penDown = false;
+        let prevYw = NaN;
+        for (let i = 0; i < pts.length; i++) {
+          const p = pts[i];
+          if (!Number.isFinite(p.yw) || Math.abs(p.yw) > 1e6) {
+            penDown = false;
+            prevYw = NaN;
+            continue;
+          }
+          if (penDown && Number.isFinite(prevYw) && Math.abs(p.yw - prevYw) > jumpBreak) {
+            penDown = false;
+          }
+          if (!penDown) {
+            ctx.moveTo(p.px, p.py);
+            penDown = true;
+          } else {
+            ctx.lineTo(p.px, p.py);
+          }
+          prevYw = p.yw;
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawDiracImpulses(imps, box, mapX, mapY) {
+        if (!imps || imps.length === 0) return;
+        const { xMin, xMax } = state.view;
+        const yZero = mapY(0);
+        const color = getCssVar('--sig-dirac');
+
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 2.4;
+
+        for (const imp of imps) {
+          if (imp.t < xMin || imp.t > xMax) continue;
+          const px = mapX(imp.t);
+          const pyTip = mapY(imp.area);
+          const clampedTip = Math.max(box.y + 14, Math.min(box.y + box.h - 14, pyTip));
+          const dir = imp.area >= 0 ? -1 : 1; // en pantalla, arriba es negativo
+
+          ctx.beginPath();
+          ctx.moveTo(px, yZero);
+          ctx.lineTo(px, clampedTip);
+          ctx.stroke();
+
+          // Punta de flecha
+          ctx.beginPath();
+          ctx.moveTo(px, clampedTip);
+          ctx.lineTo(px - 5, clampedTip - dir * 10);
+          ctx.lineTo(px + 5, clampedTip - dir * 10);
+          ctx.closePath();
+          ctx.fill();
+
+          // Etiqueta de peso
+          ctx.font = '700 11px "Cascadia Code", Consolas, monospace';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = imp.area >= 0 ? 'bottom' : 'top';
+          ctx.fillText(`${fmtNum(imp.area, 2)}·δ`, px + 6, clampedTip + (imp.area >= 0 ? -2 : 2));
+        }
+        ctx.restore();
+      }
+
+      function drawDiscreteTrace(tr, box, mapX, mapY, tIdx, totalTraces) {
+        const { xMin, xMax } = state.view;
+        const nStart = Math.ceil(xMin);
+        const nEnd = Math.floor(xMax);
+        if (nEnd - nStart > 260) {
+          drawContinuousTrace(tr, box, mapX, mapY);
+          return;
+        }
+
+        const yZero = mapY(0);
+        const pxPerSample = box.w / Math.max(1, xMax - xMin);
+        const spread = totalTraces > 1 ? (tIdx - (totalTraces - 1) / 2) * Math.min(5, pxPerSample * 0.14) : 0;
+
+        ctx.save();
+        ctx.strokeStyle = tr.color;
+        ctx.fillStyle = tr.color;
+        ctx.lineWidth = tr.width || 2.1;
+
+        for (let n = nStart; n <= nEnd; n++) {
+          const y = tr.fn(n);
+          if (!Number.isFinite(y)) continue;
+          const px = mapX(n) + spread;
+          const py = mapY(y);
+
+          ctx.beginPath();
+          ctx.moveTo(px, yZero);
+          ctx.lineTo(px, py);
+          ctx.stroke();
+
+          const radius = totalTraces > 1 && tIdx === totalTraces - 1 ? 5.2 : 4.4;
+          ctx.beginPath();
+          ctx.arc(px, py, radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = getCssVar('--canvas-bg');
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+          ctx.strokeStyle = tr.color;
+          ctx.lineWidth = tr.width || 2.1;
+        }
+        ctx.restore();
+      }
+
+      /* =========================================================================
+         8. ACTUALIZACIÓN DE INTERFAZ, ECUACIONES, MÉTRICAS Y TABLA
+         ========================================================================= */
+      function renderLegend() {
+        const bar = document.getElementById('legendBar');
+        const isDisc = state.domain === 'discrete';
+        const v = isDisc ? 'n' : 't';
+        const brkL = isDisc ? '[' : '(';
+        const brkR = isDisc ? ']' : ')';
+        const items = [];
+
+        items.push({ id: 'x1', dot: 'dot-x1', text: state.operation === 'binary' || state.operation === 'convolution' ? `x₁${brkL}${v}${brkR}` : `x${brkL}${v}${brkR}` });
+        if (state.operation === 'binary' || state.operation === 'convolution') {
+          items.push({ id: 'x2', dot: 'dot-x2', text: `x₂${brkL}${v}${brkR}` });
+        }
+        if ((state.operation === 'transform' && state.transform.showIntermediate) || state.operation === 'evenodd') {
+          items.push({ id: 'mid', dot: 'dot-mid', text: state.operation === 'evenodd' ? `Par xₚ${brkL}${v}${brkR}` : 'Intermedia' });
+        }
+        items.push({ id: 'y', dot: 'dot-y', text: state.operation === 'evenodd' ? `Impar xᵢ${brkL}${v}${brkR}` : `Salida y${brkL}${v}${brkR}` });
+
+        bar.innerHTML = items
+          .map((it) => {
+            const muted = !state.visibility[it.id] ? 'muted' : '';
+            return `<span class="legend-item ${muted}" data-vis="${it.id}" title="Clic para mostrar/ocultar"><span class="dot ${it.dot}"></span>${it.text}</span>`;
+          })
+          .join('');
+      }
+
+      function renderMathAndMetrics() {
+        const c = state.cache;
+        if (!c) return;
+        const isDisc = state.domain === 'discrete';
+        const v = isDisc ? 'n' : 't';
+
+        document.getElementById('mathMainEq').textContent = c.mathInfo.mainEq;
+        document.getElementById('mathSubEq').textContent = c.mathInfo.subEq;
+        document.getElementById('mathSteps').innerHTML = c.mathInfo.steps.map((s) => `<li>${s}</li>`).join('');
+
+        const m = c.metrics;
+        const energyClass = m.energy < 1e-9 ? 'Señal nula' : m.power > 0.01 && m.energy > 30 ? 'Tipo Potencia (en ventana)' : 'Tipo Energía (en ventana)';
+
+        const cards = [
+          {
+            label: isDisc ? 'Energía en ventana E = Σ|y|²' : 'Energía en ventana E = ∫|y|²dt',
+            val: fmtNum(m.energy, 3),
+            note: m.hasDirac ? 'Excluye impulsos δ (energía ∞)' : energyClass
+          },
+          {
+            label: 'Potencia promedio P',
+            val: fmtNum(m.power, 3),
+            note: `Valor eficaz (RMS): ${fmtNum(m.rms, 3)}`
+          },
+          {
+            label: 'Valor medio (Nivel DC)',
+            val: fmtNum(m.mean, 3),
+            note: `Rango: [${fmtNum(m.minVal, 2)}, ${fmtNum(m.maxVal, 2)}]`
+          },
+          {
+            label: `Máximo / Mínimo (${v})`,
+            val: `${fmtNum(m.maxVal, 2)} / ${fmtNum(m.minVal, 2)}`,
+            note: `En ${v}=${fmtNum(m.maxAt, 2)} y ${v}=${fmtNum(m.minAt, 2)}`
+          },
+          {
+            label: 'Simetría detectada',
+            val: m.symmetry,
+            note: m.causal ? 'Causal (y = 0 para arg < 0)' : 'No causal / Bilateral'
+          }
+        ];
+
+        document.getElementById('metricsGrid').innerHTML = cards
+          .map(
+            (card) => `
+          <div class="metric-box">
+            <div class="metric-label">${card.label}</div>
+            <div class="metric-val">${card.val}</div>
+            <div class="metric-note">${card.note}</div>
+          </div>`
+          )
+          .join('');
+
+        renderPointEvaluation();
+
+        if (state.operation === 'convolution' && c.convAux) {
+          const shiftTxt = isDisc ? `n₀ = ${c.convAux.shift}` : `t₀ = ${fmtFixed(c.convAux.shift, 2)}`;
+          document.getElementById('lblConvVar').textContent = shiftTxt;
+          document.getElementById('convInstantReadout').textContent = `y = ${fmtNum(c.convAux.yAtShift, 4)}`;
+        }
+      }
+
+      function renderPointEvaluation() {
+        const c = state.cache;
+        if (!c) return;
+        const isDisc = state.domain === 'discrete';
+        const val = Number(document.getElementById('inpEvalPoint').value) || 0;
+        const pt = isDisc ? Math.round(val) : val;
+        const brkL = isDisc ? '[' : '(';
+        const brkR = isDisc ? ']' : ')';
+
+        const yVal = c.fnY(pt);
+        const x1Val = c.f1(pt);
+        let detail = `x${brkL}${fmtNum(pt, 2)}${brkR} = <b>${fmtNum(x1Val, 4)}</b>  →  y${brkL}${fmtNum(pt, 2)}${brkR} = <b>${fmtNum(yVal, 4)}</b>`;
+
+        if (state.operation === 'transform') {
+          const { A, a, b, C } = state.transform;
+          const arg = a * pt + b;
+          const xAtArg = c.f1(arg);
+          detail = `Argumento: (${fmtNum(a)})·(${fmtNum(pt, 2)}) + (${fmtNum(b)}) = <b>${fmtNum(arg, 3)}</b>  |  x${brkL}${fmtNum(arg, 3)}${brkR} = ${fmtNum(xAtArg, 3)}  ⇒  y = ${fmtNum(A)}·(${fmtNum(xAtArg, 3)}) + ${fmtNum(C)} = <b>${fmtNum(yVal, 4)}</b>`;
+        } else if (state.operation === 'binary') {
+          const x2Val = c.f2(pt);
+          detail = `x₁ = <b>${fmtNum(x1Val, 4)}</b>,  x₂ = <b>${fmtNum(x2Val, 4)}</b>  ⇒  y${brkL}${fmtNum(pt, 2)}${brkR} = <b>${fmtNum(yVal, 4)}</b>`;
+        } else if (state.operation === 'evenodd') {
+          const xp = c.fnMid(pt);
+          detail = `x = ${fmtNum(x1Val, 3)}  =  xₚ (${fmtNum(xp, 4)}) + xᵢ (${fmtNum(yVal, 4)})`;
+        }
+
+        document.getElementById('evalResultText').innerHTML = detail;
+      }
+
+      function renderTable() {
+        if (state.activeTab !== 'table' || !state.cache) return;
+        const c = state.cache;
+        const isDisc = state.domain === 'discrete';
+        const v = isDisc ? 'n' : 't';
+        const showX2 = state.operation === 'binary' || state.operation === 'convolution';
+        const showMid = Boolean(c.fnMid);
+
+        let headHtml = `<tr><th>${v}</th><th>x₁</th>`;
+        if (showX2) headHtml += `<th>x₂</th>`;
+        if (showMid) headHtml += `<th>${state.operation === 'evenodd' ? 'xₚ (Par)' : 'Intermedia'}</th>`;
+        headHtml += `<th>${state.operation === 'evenodd' ? 'xᵢ (Impar)' : 'y (Salida)'}</th></tr>`;
+        document.getElementById('tableHead').innerHTML = headHtml;
+
+        const rows = [];
+        const { xMin, xMax } = state.view;
+        if (isDisc) {
+          const n0 = Math.ceil(xMin);
+          const n1 = Math.floor(xMax);
+          for (let n = n0; n <= n1 && rows.length < 250; n++) {
+            rows.push(n);
+          }
+        } else {
+          const step = Math.max(0.05, Number(state.tableStep) || 0.25);
+          const start = Math.ceil(xMin / step) * step;
+          for (let t = start; t <= xMax + 1e-9 && rows.length < 250; t += step) {
+            rows.push(t);
+          }
+        }
+
+        document.getElementById('lblTableCount').textContent = `${rows.length} filas mostradas`;
+        document.getElementById('tableBody').innerHTML = rows
+          .map((pt) => {
+            let line = `<tr><td>${fmtNum(pt, isDisc ? 0 : 3)}</td><td>${fmtNum(c.f1(pt), 4)}</td>`;
+            if (showX2) line += `<td>${fmtNum(c.f2(pt), 4)}</td>`;
+            if (showMid) line += `<td>${fmtNum(c.fnMid(pt), 4)}</td>`;
+            line += `<td style="font-weight:700;">${fmtNum(c.fnY(pt), 4)}</td></tr>`;
+            return line;
+          })
+          .join('');
+      }
+
+      /* =========================================================================
+         9. SINCRONIZACIÓN COMPLETA DE CONTROLES DEL SIDEBAR
+         ========================================================================= */
+      function renderPresetDropdownsAndParams(sigNum) {
+        const sigObj = sigNum === 1 ? state.sig1 : state.sig2;
+        const list = PRESETS[state.domain];
+        const selectEl = document.getElementById(`sig${sigNum}PresetSelect`);
+
+        selectEl.innerHTML = list.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+        if (!list.some((p) => p.id === sigObj.presetId)) {
+          initPresetParams(sigObj, state.domain, list[0].id, sigObj.mode !== 'preset');
+        }
+        selectEl.value = sigObj.presetId;
+
+        const preset = list.find((p) => p.id === sigObj.presetId);
+        const paramsWrap = document.getElementById(`sig${sigNum}PresetParams`);
+        paramsWrap.innerHTML = preset.params
+          .map((prm) => {
+            const val = sigObj.presetParams[prm.key] ?? prm.def;
+            return `
+              <div class="field">
+                <div class="field-label"><span>${prm.label}</span><code>${fmtNum(val, 2)}</code></div>
+                <div class="slider-row">
+                  <input type="range" data-sig-param="${sigNum}:${prm.key}" min="${prm.min}" max="${prm.max}" step="${prm.step}" value="${val}" />
+                  <input type="number" class="num-compact" data-sig-param="${sigNum}:${prm.key}" step="${prm.step}" value="${val}" />
+                </div>
+              </div>
+            `;
+          })
+          .join('');
+
+        document.getElementById(`sig${sigNum}PresetFormula`).textContent = `${state.domain === 'discrete' ? 'x[n]' : 'x(t)'} = ${sigObj.expr}`;
+      }
+
+      function renderKeypads() {
+        const v = state.domain === 'discrete' ? 'n' : 't';
+        const chips = [
+          `u(${v})`, `delta(${v})`, `r(${v})`, `rect(${v})`, `tri(${v})`, `sinc(${v})`,
+          `sin(2*pi*${v})`, `cos(0.5*pi*${v})`, `exp(-${v})`, 'pi', '^'
+        ];
+        [1, 2].forEach((sigNum) => {
+          const wrap = document.getElementById(`sig${sigNum}Keypad`);
+          wrap.innerHTML = chips.map((c) => `<button type="button" class="chip" data-insert="${sigNum}:${c}">${c}</button>`).join('');
+        });
+      }
+
+      function renderSignalStatus(sigNum) {
+        const sigObj = sigNum === 1 ? state.sig1 : state.sig2;
+        const box = document.getElementById(`sig${sigNum}ExprStatus`);
+        if (sigObj.mode !== 'expr') {
+          box.innerHTML = '';
+          return;
+        }
+        if (sigObj.error) {
+          const fixBtn = sigObj.wrongVar
+            ? `<button type="button" class="btn btn-sm" data-fix-var="${sigNum}">Cambiar '${sigObj.wrongVar}' por '${state.domain === 'discrete' ? 'n' : 't'}'</button>`
+            : '';
+          box.innerHTML = `<div class="status-msg status-err"><span>⚠ ${escapeHtml(sigObj.error)}</span>${fixBtn}</div>`;
+        } else {
+          box.innerHTML = `<div class="status-msg status-ok"><span>✓ Expresión válida</span></div>`;
+        }
+      }
+
+      function syncUI() {
+        const isDisc = state.domain === 'discrete';
+        const v = isDisc ? 'n' : 't';
+
+        // Dominio
+        document.getElementById('btnContinuous').classList.toggle('active', !isDisc);
+        document.getElementById('btnDiscrete').classList.toggle('active', isDisc);
+
+        // Textos dependientes del dominio
+        document.getElementById('opSubTransform').textContent = isDisc ? 'A·x[a·n + b] + C' : 'A·x(a·t + b) + C';
+        document.getElementById('opSubConv').textContent = isDisc ? '(x₁ * x₂)[n]' : '(x₁ * x₂)(t)';
+        document.getElementById('opSubEvenOdd').textContent = isDisc ? 'xₚ[n] + xᵢ[n]' : 'xₚ(t) + xᵢ(t)';
+        document.getElementById('opTitleCalculus').textContent = isDisc ? 'Diferencia y Acumulador' : 'Cálculo Diferencial e Integral';
+        document.getElementById('opSubCalculus').textContent = isDisc ? 'Δx[n] = x[n]−x[n−1] · Acumulador Σ' : 'Derivada d/dt x(t) · Integral ∫ x(τ)dτ';
+
+        document.getElementById('sig1Title').textContent =
+          state.operation === 'binary' || state.operation === 'convolution'
+            ? (isDisc ? 'Primera Señal x₁[n]' : 'Primera Señal x₁(t)')
+            : (isDisc ? 'Señal de Entrada x[n]' : 'Señal de Entrada x(t)');
+        document.getElementById('sig2Title').textContent = isDisc ? 'Segunda Señal x₂[n]' : 'Segunda Señal x₂(t)';
+        document.getElementById('varBadge1').textContent = v;
+        document.getElementById('varBadge2').textContent = v;
+        document.getElementById('lblEvalPoint').textContent = `Evaluar en ${v} =`;
+        document.getElementById('inpEvalPoint').step = isDisc ? '1' : '0.25';
+        document.getElementById('wrapTableStep').classList.toggle('hidden', isDisc);
+
+        // Opciones de cálculo según dominio
+        const calcSel = document.getElementById('selCalcOp');
+        calcSel.options[0].textContent = isDisc ? 'Primera Diferencia: x[n] − x[n − 1]' : 'Derivada: d/dt x(t)';
+        calcSel.options[1].textContent = isDisc ? 'Acumulador: Σ x[k]' : 'Integral acumulada: ∫ x(τ) dτ';
+        document.getElementById('calcLowerLimitBox').classList.toggle('hidden', state.calculus.op !== 'integ');
+
+        // Visibilidad de pestaña Secuencia en modo discreto
+        document.getElementById('sig1SeqPill').classList.toggle('hidden', !isDisc);
+        document.getElementById('sig2SeqPill').classList.toggle('hidden', !isDisc);
+        if (!isDisc && state.sig1.mode === 'seq') state.sig1.mode = 'preset';
+        if (!isDisc && state.sig2.mode === 'seq') state.sig2.mode = 'preset';
+
+        // Mostrar/ocultar tarjetas de señal 2 y parámetros
+        const showSig2 = state.operation === 'binary' || (state.operation === 'convolution' && state.conv.type !== 'acorr');
+        document.getElementById('cardSignal2').classList.toggle('hidden', !showSig2);
+
+        document.getElementById('paramsTransform').classList.toggle('hidden', state.operation !== 'transform');
+        document.getElementById('paramsBinary').classList.toggle('hidden', state.operation !== 'binary');
+        document.getElementById('paramsConv').classList.toggle('hidden', state.operation !== 'convolution');
+        document.getElementById('paramsEvenOdd').classList.toggle('hidden', state.operation !== 'evenodd');
+        document.getElementById('paramsCalculus').classList.toggle('hidden', state.operation !== 'calculus');
+        document.getElementById('convBar').classList.toggle('hidden', state.operation !== 'convolution');
+
+        const titles = {
+          transform: 'Parámetros de Transformación',
+          binary: 'Operación entre Señales',
+          convolution: 'Convolución y Correlación',
+          evenodd: 'Descomposición Par / Impar',
+          calculus: isDisc ? 'Diferencia / Acumulador' : 'Derivada / Integral'
+        };
+        document.getElementById('opParamsTitle').textContent = titles[state.operation];
+
+        // Botones de operación
+        document.querySelectorAll('.op-btn').forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.op === state.operation);
+        });
+
+        // Modos de señal 1 y 2
+        [1, 2].forEach((n) => {
+          const s = n === 1 ? state.sig1 : state.sig2;
+          document.querySelectorAll(`#sig${n}ModePills .mode-pill`).forEach((p) => {
+            p.classList.toggle('active', p.dataset.mode === s.mode);
+          });
+          document.getElementById(`sig${n}PresetBox`).classList.toggle('hidden', s.mode !== 'preset');
+          document.getElementById(`sig${n}ExprBox`).classList.toggle('hidden', s.mode !== 'expr');
+          document.getElementById(`sig${n}SeqBox`).classList.toggle('hidden', s.mode !== 'seq');
+          document.getElementById(`btnSig${n}ToExpr`).classList.toggle('hidden', s.mode !== 'preset');
+          document.getElementById(`sig${n}ExprInput`).value = s.expr;
+          document.getElementById(`sig${n}SeqStart`).value = s.seqStart;
+          document.getElementById(`sig${n}SeqValues`).value = s.seqValues.join(', ');
+          renderPresetDropdownsAndParams(n);
+        });
+
+        renderKeypads();
+
+        // Valores de transformación
+        document.getElementById('rngParamA').value = state.transform.A;
+        document.getElementById('numParamA').value = state.transform.A;
+        document.getElementById('lblParamA').textContent = fmtFixed(state.transform.A, 2);
+
+        document.getElementById('rngParamSmallA').value = state.transform.a;
+        document.getElementById('numParamSmallA').value = state.transform.a;
+        document.getElementById('lblParamSmallA').textContent = fmtFixed(state.transform.a, 2);
+
+        const bStep = isDisc ? 1 : 0.25;
+        document.getElementById('rngParamB').step = bStep;
+        document.getElementById('numParamB').step = bStep;
+        document.getElementById('rngParamB').value = state.transform.b;
+        document.getElementById('numParamB').value = state.transform.b;
+        document.getElementById('lblParamB').textContent = fmtFixed(state.transform.b, isDisc ? 0 : 2);
+
+        document.getElementById('rngParamC').value = state.transform.C;
+        document.getElementById('numParamC').value = state.transform.C;
+        document.getElementById('lblParamC').textContent = fmtFixed(state.transform.C, 2);
+
+        document.getElementById('chkShowIntermediate').checked = state.transform.showIntermediate;
+        document.getElementById('intermediateOrderWrap').classList.toggle('hidden', !state.transform.showIntermediate);
+        document.getElementById('selTransformOrder').value = state.transform.order;
+
+        // Valores binarios
+        document.getElementById('selBinaryOp').value = state.binary.op;
+        document.getElementById('linCombParams').classList.toggle('hidden', state.binary.op !== 'lincomb');
+        document.getElementById('rngAlpha').value = state.binary.alpha;
+        document.getElementById('numAlpha').value = state.binary.alpha;
+        document.getElementById('lblAlpha').textContent = fmtFixed(state.binary.alpha, 2);
+        document.getElementById('rngBeta').value = state.binary.beta;
+        document.getElementById('numBeta').value = state.binary.beta;
+        document.getElementById('lblBeta').textContent = fmtFixed(state.binary.beta, 2);
+
+        // Convolución
+        document.getElementById('selConvType').value = state.conv.type;
+        document.getElementById('rngConvSpan').value = state.conv.span;
+        document.getElementById('numConvSpan').value = state.conv.span;
+        document.getElementById('lblConvSpan').textContent = state.conv.span;
+        const shiftSlider = document.getElementById('rngConvShift');
+        shiftSlider.min = Math.floor(state.view.xMin);
+        shiftSlider.max = Math.ceil(state.view.xMax);
+        shiftSlider.step = isDisc ? 1 : 0.05;
+        shiftSlider.value = state.conv.shift;
+
+        // Botón modo de diseño
+        document.getElementById('btnLayoutMode').textContent = state.layoutMode === 'stacked' ? 'Vista: Apilada' : 'Vista: Superpuesta';
+        document.getElementById('btnLayoutMode').classList.toggle('hidden', state.operation === 'convolution');
+
+        // Estado dibujo directo en canvas
+        const drawBtn = document.getElementById('btnToggleCanvasDraw');
+        const drawActive = isDisc && state.sig1.mode === 'seq' && state.drawDiscreteMode;
+        drawBtn.classList.toggle('active-toggle', drawActive);
+        drawBtn.textContent = drawActive ? '✓ Editando muestras en gráfica (clic/arrastrar puntos)' : '✏️ Activar edición directa en la gráfica';
+        document.getElementById('hudHint').textContent = drawActive
+          ? 'Modo edición activo: haz clic o arrastra sobre la gráfica para modificar x[n]'
+          : 'Arrastra para mover · Rueda para zoom (Shift+rueda: eje X, Alt+rueda: eje Y)';
+
+        refreshComputationAndRender();
+      }
+
+      function refreshComputationAndRender() {
+        computeAll();
+        renderSignalStatus(1);
+        renderSignalStatus(2);
+        renderLegend();
+        renderCanvas();
+        renderMathAndMetrics();
+        renderTable();
+      }
+
+      /* =========================================================================
+         10. EJEMPLOS DIDÁCTICOS GUIADOS
+         ========================================================================= */
+      function loadGuidedExample(id) {
+        if (!id) return;
+        stopConvAnimation();
+
+        if (id === 'ex_transform') {
+          state.domain = 'continuous';
+          state.operation = 'transform';
+          state.sig1.mode = 'preset';
+          initPresetParams(state.sig1, 'continuous', 'tri');
+          state.transform = { A: 2, a: -0.5, b: 1, C: 0, showIntermediate: true, order: 'scaleFirst' };
+          state.view = { xMin: -5, xMax: 7, yMin: -1, yMax: 5 };
+        } else if (id === 'ex_rect_diff') {
+          state.domain = 'continuous';
+          state.operation = 'binary';
+          state.sig1.mode = 'expr';
+          state.sig1.expr = 'u(t)';
+          state.sig2.mode = 'expr';
+          state.sig2.expr = 'u(t - 3)';
+          state.binary.op = 'sub';
+          state.layoutMode = 'stacked';
+          state.view = { xMin: -2, xMax: 6, yMin: -0.5, yMax: 1.8 };
+        } else if (id === 'ex_am_mod') {
+          state.domain = 'continuous';
+          state.operation = 'binary';
+          state.sig1.mode = 'expr';
+          state.sig1.expr = 'cos(8*pi*t)';
+          state.sig2.mode = 'expr';
+          state.sig2.expr = 'tri(t/2)';
+          state.binary.op = 'mul';
+          state.layoutMode = 'stacked';
+          state.view = { xMin: -3, xMax: 3, yMin: -1.4, yMax: 1.4 };
+        } else if (id === 'ex_conv_rect') {
+          state.domain = 'continuous';
+          state.operation = 'convolution';
+          state.conv.type = 'conv';
+          state.conv.span = 10;
+          state.conv.shift = 0;
+          state.sig1.mode = 'preset';
+          initPresetParams(state.sig1, 'continuous', 'rect');
+          state.sig1.presetParams = { A: 1, t0: 0, W: 2 };
+          state.sig2.mode = 'preset';
+          initPresetParams(state.sig2, 'continuous', 'rect');
+          state.sig2.presetParams = { A: 1, t0: 0, W: 2 };
+          state.view = { xMin: -4, xMax: 4, yMin: -0.5, yMax: 2.5 };
+        } else if (id === 'ex_conv_exp') {
+          state.domain = 'continuous';
+          state.operation = 'convolution';
+          state.conv.type = 'conv';
+          state.conv.span = 12;
+          state.conv.shift = 1.5;
+          state.sig1.mode = 'expr';
+          state.sig1.expr = 'u(t) - u(t - 2)';
+          state.sig2.mode = 'expr';
+          state.sig2.expr = 'exp(-t)*u(t)';
+          state.view = { xMin: -2, xMax: 7, yMin: -0.3, yMax: 1.4 };
+        } else if (id === 'ex_conv_disc') {
+          state.domain = 'discrete';
+          state.operation = 'convolution';
+          state.conv.type = 'conv';
+          state.conv.span = 10;
+          state.conv.shift = 2;
+          state.sig1.mode = 'seq';
+          state.sig1.seqStart = 0;
+          state.sig1.seqValues = [1, 2, 1];
+          state.sig2.mode = 'seq';
+          state.sig2.seqStart = 0;
+          state.sig2.seqValues = [1, -1, 2];
+          state.view = { xMin: -3, xMax: 7, yMin: -3, yMax: 5 };
+        } else if (id === 'ex_even_odd') {
+          state.domain = 'continuous';
+          state.operation = 'evenodd';
+          state.sig1.mode = 'expr';
+          state.sig1.expr = '2*exp(-0.6*t)*u(t)';
+          state.layoutMode = 'stacked';
+          state.view = { xMin: -5, xMax: 5, yMin: -1.5, yMax: 2.5 };
+        } else if (id === 'ex_decim_interp') {
+          state.domain = 'discrete';
+          state.operation = 'transform';
+          state.sig1.mode = 'preset';
+          initPresetParams(state.sig1, 'discrete', 'cos_disc');
+          state.transform = { A: 1, a: 0.5, b: 0, C: 0, showIntermediate: false, order: 'shiftFirst' };
+          state.layoutMode = 'stacked';
+          state.view = { xMin: -10, xMax: 10, yMin: -2.6, yMax: 2.6 };
+        } else if (id === 'ex_deriv_jump') {
+          state.domain = 'continuous';
+          state.operation = 'calculus';
+          state.calculus.op = 'deriv';
+          state.sig1.mode = 'expr';
+          state.sig1.expr = 'r(t) - r(t - 2) - 2*u(t - 2)';
+          state.layoutMode = 'stacked';
+          state.view = { xMin: -2, xMax: 5, yMin: -2.8, yMax: 2.8 };
+        }
+        syncUI();
+      }
+
+      /* =========================================================================
+         11. INTERACCIÓN CON RATÓN EN CANVAS (ZOOM, PAN, HUD, EDICIÓN DISCRETA)
+         ========================================================================= */
+      function screenToWorld(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        const px = clientX - rect.left;
+        const py = clientY - rect.top;
+        const panels = state._lastPanels || [];
+        let activePanel = panels.find((p) => p._box && py >= p._box.y && py <= p._box.y + p._box.h) || panels[0];
+        if (!activePanel || !activePanel._box) return null;
+        const box = activePanel._box;
+        const xw = state.view.xMin + ((px - box.x) / box.w) * (state.view.xMax - state.view.xMin);
+        const yw = state.view.yMax - ((py - box.y) / box.h) * (state.view.yMax - state.view.yMin);
+        return { xw, yw, px, py, panel: activePanel };
+      }
+
+      function updateHud() {
+        const hud = document.getElementById('hudReadout');
+        if (!state.pointer.inside || !state.cache) {
+          hud.textContent = 'Mueve el cursor sobre la gráfica para inspeccionar valores';
+          return;
+        }
+        const isDisc = state.domain === 'discrete';
+        const pt = isDisc ? Math.round(state.pointer.xWorld) : state.pointer.xWorld;
+        const v = isDisc ? 'n' : 't';
+        const c = state.cache;
+
+        const parts = [`<span><b>${v}</b> = ${fmtNum(pt, isDisc ? 0 : 3)}</span>`];
+        if (state.operation === 'convolution' && c.convAux) {
+          parts.push(`<span style="color:var(--sig-x1);font-weight:700;">x₁ = ${fmtNum(c.f1(pt), 3)}</span>`);
+          parts.push(`<span style="color:var(--sig-y);font-weight:700;">y = ${fmtNum(c.fnY(pt), 3)}</span>`);
+        } else {
+          parts.push(`<span style="color:var(--sig-x1);font-weight:700;">x₁ = ${fmtNum(c.f1(pt), 3)}</span>`);
+          if (state.operation === 'binary') parts.push(`<span style="color:var(--sig-x2);font-weight:700;">x₂ = ${fmtNum(c.f2(pt), 3)}</span>`);
+          if (c.fnMid) parts.push(`<span style="color:var(--sig-mid);font-weight:700;">${state.operation === 'evenodd' ? 'xₚ' : 'mid'} = ${fmtNum(c.fnMid(pt), 3)}</span>`);
+          parts.push(`<span style="color:var(--sig-y);font-weight:700;">${state.operation === 'evenodd' ? 'xᵢ' : 'y'} = ${fmtNum(c.fnY(pt), 3)}</span>`);
+        }
+        hud.innerHTML = parts.join('');
+      }
+
+      function updateDiscreteSampleAt(n, newY) {
+        const vals = [...state.sig1.seqValues];
+        let n0 = Math.round(Number(state.sig1.seqStart) || 0);
+        const snappedY = Math.round(newY * 20) / 20;
+        const idx = n - n0;
+        if (idx < 0) {
+          const prepend = new Array(-idx).fill(0);
+          prepend[0] = snappedY;
+          state.sig1.seqStart = n;
+          state.sig1.seqValues = prepend.concat(vals);
+        } else if (idx >= vals.length) {
+          while (vals.length < idx) vals.push(0);
+          vals.push(snappedY);
+          state.sig1.seqValues = vals;
+        } else {
+          vals[idx] = snappedY;
+          state.sig1.seqValues = vals;
+        }
+        document.getElementById('sig1SeqStart').value = state.sig1.seqStart;
+        document.getElementById('sig1SeqValues').value = state.sig1.seqValues.join(', ');
+        refreshComputationAndRender();
+      }
+
+      canvas.addEventListener('pointerdown', (e) => {
+        const info = screenToWorld(e.clientX, e.clientY);
+        if (!info) return;
+        canvas.setPointerCapture(e.pointerId);
+
+        const canEditStem = state.domain === 'discrete' && state.sig1.mode === 'seq' && state.drawDiscreteMode;
+        if (canEditStem && (state.layoutMode === 'overlay' || info.panel.interactiveDraw)) {
+          const n = Math.round(info.xw);
+          state.pointer.draggingStemIdx = n;
+          updateDiscreteSampleAt(n, info.yw);
+          return;
+        }
+
+        state.pointer.draggingPan = true;
+        state.pointer.panStartX = e.clientX;
+        state.pointer.panStartY = e.clientY;
+        state.pointer.viewSnapshot = { ...state.view, box: info.panel._box };
+      });
+
+      canvas.addEventListener('pointermove', (e) => {
+        const info = screenToWorld(e.clientX, e.clientY);
+        if (info) {
+          state.pointer.inside = true;
+          state.pointer.xWorld = info.xw;
+          state.pointer.yWorld = info.yw;
+        }
+
+        if (state.pointer.draggingStemIdx !== null && info) {
+          updateDiscreteSampleAt(state.pointer.draggingStemIdx, info.yw);
+          updateHud();
+          return;
+        }
+
+        if (state.pointer.draggingPan && state.pointer.viewSnapshot) {
+          const snap = state.pointer.viewSnapshot;
+          const dxPx = e.clientX - state.pointer.panStartX;
+          const dyPx = e.clientY - state.pointer.panStartY;
+          const dxW = (dxPx / snap.box.w) * (snap.xMax - snap.xMin);
+          const dyW = (dyPx / snap.box.h) * (snap.yMax - snap.yMin);
+          state.view.xMin = snap.xMin - dxW;
+          state.view.xMax = snap.xMax - dxW;
+          state.view.yMin = snap.yMin + dyW;
+          state.view.yMax = snap.yMax + dyW;
+          refreshComputationAndRender();
+        } else {
+          renderCanvas();
+        }
+        updateHud();
+      });
+
+      canvas.addEventListener('pointerup', () => {
+        state.pointer.draggingPan = false;
+        state.pointer.draggingStemIdx = null;
+      });
+
+      canvas.addEventListener('pointerleave', () => {
+        state.pointer.inside = false;
+        state.pointer.draggingPan = false;
+        state.pointer.draggingStemIdx = null;
+        renderCanvas();
+        updateHud();
+      });
+
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const info = screenToWorld(e.clientX, e.clientY);
+        if (!info) return;
+        const factor = e.deltaY > 0 ? 1.14 : 1 / 1.14;
+        const zoomX = !e.altKey;
+        const zoomY = !e.shiftKey;
+
+        if (zoomX) {
+          const newSpanX = Math.max(0.5, Math.min(200, (state.view.xMax - state.view.xMin) * factor));
+          const ratioX = (info.xw - state.view.xMin) / (state.view.xMax - state.view.xMin);
+          state.view.xMin = info.xw - ratioX * newSpanX;
+          state.view.xMax = state.view.xMin + newSpanX;
+        }
+        if (zoomY) {
+          const newSpanY = Math.max(0.4, Math.min(200, (state.view.yMax - state.view.yMin) * factor));
+          const ratioY = (info.yw - state.view.yMin) / (state.view.yMax - state.view.yMin);
+          state.view.yMin = info.yw - ratioY * newSpanY;
+          state.view.yMax = state.view.yMin + newSpanY;
+        }
+        refreshComputationAndRender();
+      }, { passive: false });
+
+      /* =========================================================================
+         12. ANIMACIÓN DE CONVOLUCIÓN Y EXPORTACIÓN PNG / CSV
+         ========================================================================= */
+      function stopConvAnimation() {
+        state.conv.playing = false;
+        document.getElementById('btnConvPlay').textContent = '▶ Animar';
+      }
+
+      function stepConvAnimation(ts) {
+        if (!state.conv.playing) return;
+        if (!state.conv.lastFrameTs) state.conv.lastFrameTs = ts;
+        const dtSec = Math.min(0.1, (ts - state.conv.lastFrameTs) / 1000);
+        state.conv.lastFrameTs = ts;
+
+        const minS = state.view.xMin;
+        const maxS = state.view.xMax;
+        const span = maxS - minS;
+        state.conv.shift += dtSec * (span * 0.22) * state.conv.speed;
+        if (state.conv.shift > maxS) state.conv.shift = minS;
+
+        document.getElementById('rngConvShift').value = state.domain === 'discrete' ? Math.round(state.conv.shift) : state.conv.shift;
+        refreshComputationAndRender();
+        requestAnimationFrame(stepConvAnimation);
+      }
+
+      function autoFitY() {
+        if (!state.cache) return;
+        const { xMin, xMax } = state.view;
+        const isDisc = state.domain === 'discrete';
+        let lo = Infinity;
+        let hi = -Infinity;
+        const fns = [state.cache.f1, state.cache.fnY];
+        if (state.operation === 'binary' || state.operation === 'convolution') fns.push(state.cache.f2);
+        if (state.cache.fnMid) fns.push(state.cache.fnMid);
+
+        if (isDisc) {
+          for (let n = Math.ceil(xMin); n <= Math.floor(xMax); n++) {
+            for (const f of fns) {
+              const v = f(n);
+              if (Number.isFinite(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+            }
+          }
+        } else {
+          for (let i = 0; i <= 250; i++) {
+            const t = xMin + (i / 250) * (xMax - xMin);
+            for (const f of fns) {
+              const v = f(t);
+              if (Number.isFinite(v) && Math.abs(v) < 1e4) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+            }
+          }
+        }
+        if (!Number.isFinite(lo) || !Number.isFinite(hi)) return;
+        lo = Math.min(lo, 0);
+        hi = Math.max(hi, 0);
+        const pad = Math.max(0.5, (hi - lo) * 0.18);
+        state.view.yMin = lo - pad;
+        state.view.yMax = hi + pad;
+        refreshComputationAndRender();
+      }
+
+      function exportPng() {
+        const link = document.createElement('a');
+        link.download = `lab-senales-${state.domain}-${state.operation}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }
+
+      function exportCsv() {
+        if (!state.cache) return;
+        const isDisc = state.domain === 'discrete';
+        const v = isDisc ? 'n' : 't';
+        const c = state.cache;
+        const lines = [];
+        const headers = [v, 'x1'];
+        const hasX2 = state.operation === 'binary' || state.operation === 'convolution';
+        const hasMid = Boolean(c.fnMid);
+        if (hasX2) headers.push('x2');
+        if (hasMid) headers.push('intermedia');
+        headers.push('y');
+        lines.push(headers.join(','));
+
+        const { xMin, xMax } = state.view;
+        if (isDisc) {
+          for (let n = Math.ceil(xMin); n <= Math.floor(xMax); n++) {
+            const row = [n, c.f1(n)];
+            if (hasX2) row.push(c.f2(n));
+            if (hasMid) row.push(c.fnMid(n));
+            row.push(c.fnY(n));
+            lines.push(row.join(','));
+          }
+        } else {
+          const step = Math.max(0.02, Number(state.tableStep) || 0.25);
+          for (let t = Math.ceil(xMin / step) * step; t <= xMax + 1e-9; t += step) {
+            const row = [t.toFixed(4), c.f1(t)];
+            if (hasX2) row.push(c.f2(t));
+            if (hasMid) row.push(c.fnMid(t));
+            row.push(c.fnY(t));
+            lines.push(row.join(','));
+          }
+        }
+
+        const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `datos-senales-${state.domain}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      /* =========================================================================
+         13. ENLACE DE EVENTOS DE LA INTERFAZ
+         ========================================================================= */
+      // Cambio de dominio
+      document.querySelectorAll('.domain-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const newDomain = btn.dataset.domain;
+          if (newDomain === state.domain) return;
+          stopConvAnimation();
+          state.domain = newDomain;
+          initPresetParams(state.sig1, newDomain, PRESETS[newDomain][0].id);
+          initPresetParams(state.sig2, newDomain, PRESETS[newDomain][Math.min(2, PRESETS[newDomain].length - 1)].id);
+          if (newDomain === 'discrete') {
+            state.view = { xMin: -8, xMax: 10, yMin: -3, yMax: 4 };
+            state.evalPoint = 1;
+          } else {
+            state.view = { xMin: -6, xMax: 6, yMin: -3, yMax: 4.5 };
+          }
+          document.getElementById('inpEvalPoint').value = state.evalPoint;
+          syncUI();
+        });
+      });
+
+      // Selector de operación
+      document.getElementById('opSelector').addEventListener('click', (e) => {
+        const btn = e.target.closest('.op-btn');
+        if (!btn) return;
+        stopConvAnimation();
+        state.operation = btn.dataset.op;
+        syncUI();
+      });
+
+      // Modos de señal (preset / expr / seq)
+      document.querySelectorAll('.mode-pill').forEach((pill) => {
+        pill.addEventListener('click', () => {
+          const sigNum = Number(pill.dataset.sig);
+          const mode = pill.dataset.mode;
+          const sigObj = sigNum === 1 ? state.sig1 : state.sig2;
+          sigObj.mode = mode;
+          syncUI();
+        });
+      });
+
+      [1, 2].forEach((sigNum) => {
+        document.getElementById(`sig${sigNum}PresetSelect`).addEventListener('change', (e) => {
+          const sigObj = sigNum === 1 ? state.sig1 : state.sig2;
+          initPresetParams(sigObj, state.domain, e.target.value);
+          syncUI();
+        });
+
+        document.getElementById(`sig${sigNum}PresetParams`).addEventListener('input', (e) => {
+          const attr = e.target.dataset.sigParam;
+          if (!attr) return;
+          const [, key] = attr.split(':');
+          const sigObj = sigNum === 1 ? state.sig1 : state.sig2;
+          const val = parseFloat(e.target.value);
+          if (!Number.isFinite(val)) return;
+          sigObj.presetParams[key] = val;
+          const preset = PRESETS[state.domain].find((p) => p.id === sigObj.presetId);
+          sigObj.expr = preset.toExpr(sigObj.presetParams);
+          // Sincronizar par slider/input
+          document.querySelectorAll(`[data-sig-param="${attr}"]`).forEach((el) => {
+            if (el !== e.target) el.value = val;
+          });
+          const labelCode = e.target.closest('.field').querySelector('.field-label code');
+          if (labelCode) labelCode.textContent = fmtNum(val, 2);
+          document.getElementById(`sig${sigNum}PresetFormula`).textContent = `${state.domain === 'discrete' ? 'x[n]' : 'x(t)'} = ${sigObj.expr}`;
+          refreshComputationAndRender();
+        });
+
+        document.getElementById(`btnSig${sigNum}ToExpr`).addEventListener('click', () => {
+          const sigObj = sigNum === 1 ? state.sig1 : state.sig2;
+          sigObj.mode = 'expr';
+          syncUI();
+        });
+
+        document.getElementById(`sig${sigNum}ExprInput`).addEventListener('input', (e) => {
+          const sigObj = sigNum === 1 ? state.sig1 : state.sig2;
+          sigObj.expr = e.target.value;
+          refreshComputationAndRender();
+        });
+
+        document.getElementById(`sig${sigNum}Keypad`).addEventListener('click', (e) => {
+          const chip = e.target.closest('[data-insert]');
+          if (!chip) return;
+          const [, txt] = chip.dataset.insert.split(':');
+          const inp = document.getElementById(`sig${sigNum}ExprInput`);
+          const start = inp.selectionStart ?? inp.value.length;
+          const end = inp.selectionEnd ?? inp.value.length;
+          inp.value = inp.value.slice(0, start) + txt + inp.value.slice(end);
+          const sigObj = sigNum === 1 ? state.sig1 : state.sig2;
+          sigObj.expr = inp.value;
+          inp.focus();
+          inp.setSelectionRange(start + txt.length, start + txt.length);
+          refreshComputationAndRender();
+        });
+
+        document.getElementById(`sig${sigNum}ExprStatus`).addEventListener('click', (e) => {
+          const fix = e.target.closest('[data-fix-var]');
+          if (!fix) return;
+          const sigObj = sigNum === 1 ? state.sig1 : state.sig2;
+          const from = sigObj.wrongVar;
+          const to = state.domain === 'discrete' ? 'n' : 't';
+          sigObj.expr = sigObj.expr.replace(new RegExp(`\\b${from}\\b`, 'g'), to);
+          document.getElementById(`sig${sigNum}ExprInput`).value = sigObj.expr;
+          refreshComputationAndRender();
+        });
+
+        document.getElementById(`sig${sigNum}SeqStart`).addEventListener('input', (e) => {
+          const sigObj = sigNum === 1 ? state.sig1 : state.sig2;
+          sigObj.seqStart = parseInt(e.target.value, 10) || 0;
+          refreshComputationAndRender();
+        });
+
+        document.getElementById(`sig${sigNum}SeqValues`).addEventListener('input', (e) => {
+          const sigObj = sigNum === 1 ? state.sig1 : state.sig2;
+          const arr = e.target.value
+            .split(/[\s,;]+/)
+            .map((s) => parseFloat(s))
+            .filter((x) => Number.isFinite(x));
+          sigObj.seqValues = arr.length > 0 ? arr : [0];
+          refreshComputationAndRender();
+        });
+      });
+
+      document.getElementById('btnToggleCanvasDraw').addEventListener('click', () => {
+        state.drawDiscreteMode = !state.drawDiscreteMode;
+        syncUI();
+      });
+
+      // Enlazar sliders + numeric de transformación
+      function bindPair(rngId, numId, lblId, getter, setter, decimals = 2) {
+        const r = document.getElementById(rngId);
+        const n = document.getElementById(numId);
+        const l = document.getElementById(lblId);
+        const update = (raw) => {
+          const val = parseFloat(raw);
+          if (!Number.isFinite(val)) return;
+          setter(val);
+          r.value = val;
+          n.value = val;
+          if (l) l.textContent = fmtFixed(val, decimals);
+          refreshComputationAndRender();
+        };
+        r.addEventListener('input', (e) => update(e.target.value));
+        n.addEventListener('input', (e) => update(e.target.value));
+      }
+
+      bindPair('rngParamA', 'numParamA', 'lblParamA', () => state.transform.A, (v) => (state.transform.A = v));
+      bindPair('rngParamSmallA', 'numParamSmallA', 'lblParamSmallA', () => state.transform.a, (v) => (state.transform.a = v));
+      bindPair('rngParamB', 'numParamB', 'lblParamB', () => state.transform.b, (v) => (state.transform.b = v));
+      bindPair('rngParamC', 'numParamC', 'lblParamC', () => state.transform.C, (v) => (state.transform.C = v));
+
+      bindPair('rngAlpha', 'numAlpha', 'lblAlpha', () => state.binary.alpha, (v) => (state.binary.alpha = v));
+      bindPair('rngBeta', 'numBeta', 'lblBeta', () => state.binary.beta, (v) => (state.binary.beta = v));
+      bindPair('rngConvSpan', 'numConvSpan', 'lblConvSpan', () => state.conv.span, (v) => (state.conv.span = v), 0);
+
+      document.getElementById('transformShortcuts').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-preset]');
+        if (!btn) return;
+        const p = btn.dataset.preset;
+        state.transform = { ...state.transform, A: 1, a: 1, b: 0, C: 0 };
+        if (p === 'delay') state.transform.b = -2;
+        else if (p === 'advance') state.transform.b = 2;
+        else if (p === 'reflect') state.transform.a = -1;
+        else if (p === 'compress') state.transform.a = 2;
+        else if (p === 'expand') state.transform.a = 0.5;
+        else if (p === 'invertAmp') state.transform.A = -1;
+        syncUI();
+      });
+
+      document.getElementById('chkShowIntermediate').addEventListener('change', (e) => {
+        state.transform.showIntermediate = e.target.checked;
+        syncUI();
+      });
+
+      document.getElementById('selTransformOrder').addEventListener('change', (e) => {
+        state.transform.order = e.target.value;
+        refreshComputationAndRender();
+      });
+
+      document.getElementById('btnResetOpParams').addEventListener('click', () => {
+        if (state.operation === 'transform') {
+          state.transform = { A: 1, a: 1, b: 0, C: 0, showIntermediate: false, order: 'shiftFirst' };
+        } else if (state.operation === 'binary') {
+          state.binary = { op: 'add', alpha: 1, beta: 1 };
+        } else if (state.operation === 'convolution') {
+          state.conv.span = 12;
+          state.conv.shift = 0;
+        }
+        syncUI();
+      });
+
+      document.getElementById('selBinaryOp').addEventListener('change', (e) => {
+        state.binary.op = e.target.value;
+        syncUI();
+      });
+
+      document.getElementById('selConvType').addEventListener('change', (e) => {
+        state.conv.type = e.target.value;
+        syncUI();
+      });
+
+      document.getElementById('rngConvShift').addEventListener('input', (e) => {
+        state.conv.shift = parseFloat(e.target.value) || 0;
+        refreshComputationAndRender();
+      });
+
+      document.getElementById('btnConvPlay').addEventListener('click', () => {
+        state.conv.playing = !state.conv.playing;
+        document.getElementById('btnConvPlay').textContent = state.conv.playing ? '⏸ Pausar' : '▶ Animar';
+        if (state.conv.playing) {
+          state.conv.lastFrameTs = 0;
+          requestAnimationFrame(stepConvAnimation);
+        }
+      });
+
+      document.getElementById('selConvSpeed').addEventListener('change', (e) => {
+        state.conv.speed = parseFloat(e.target.value) || 1;
+      });
+
+      document.getElementById('selCalcOp').addEventListener('change', (e) => {
+        state.calculus.op = e.target.value;
+        syncUI();
+      });
+
+      document.getElementById('selCalcLower').addEventListener('change', (e) => {
+        state.calculus.lower = e.target.value;
+        refreshComputationAndRender();
+      });
+
+      // Leyenda interactiva
+      document.getElementById('legendBar').addEventListener('click', (e) => {
+        const item = e.target.closest('[data-vis]');
+        if (!item) return;
+        const k = item.dataset.vis;
+        state.visibility[k] = !state.visibility[k];
+        renderLegend();
+        renderCanvas();
+      });
+
+      // Controles de vista y zoom
+      document.getElementById('btnLayoutMode').addEventListener('click', () => {
+        state.layoutMode = state.layoutMode === 'stacked' ? 'overlay' : 'stacked';
+        syncUI();
+      });
+
+      document.getElementById('btnZoomIn').addEventListener('click', () => {
+        const cx = 0.5 * (state.view.xMin + state.view.xMax);
+        const cy = 0.5 * (state.view.yMin + state.view.yMax);
+        const hx = 0.5 * (state.view.xMax - state.view.xMin) * 0.78;
+        const hy = 0.5 * (state.view.yMax - state.view.yMin) * 0.78;
+        state.view = { xMin: cx - hx, xMax: cx + hx, yMin: cy - hy, yMax: cy + hy };
+        refreshComputationAndRender();
+      });
+
+      document.getElementById('btnZoomOut').addEventListener('click', () => {
+        const cx = 0.5 * (state.view.xMin + state.view.xMax);
+        const cy = 0.5 * (state.view.yMin + state.view.yMax);
+        const hx = 0.5 * (state.view.xMax - state.view.xMin) * 1.28;
+        const hy = 0.5 * (state.view.yMax - state.view.yMin) * 1.28;
+        state.view = { xMin: cx - hx, xMax: cx + hx, yMin: cy - hy, yMax: cy + hy };
+        refreshComputationAndRender();
+      });
+
+      document.getElementById('btnAutoY').addEventListener('click', autoFitY);
+
+      document.getElementById('btnResetView').addEventListener('click', () => {
+        state.view = state.domain === 'discrete'
+          ? { xMin: -8, xMax: 10, yMin: -3, yMax: 4 }
+          : { xMin: -6, xMax: 6, yMin: -3, yMax: 4.5 };
+        refreshComputationAndRender();
+      });
+
+      // Tabs inferiores
+      document.querySelectorAll('.tab-btn').forEach((tab) => {
+        tab.addEventListener('click', () => {
+          state.activeTab = tab.dataset.tab;
+          document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b === tab));
+          document.getElementById('tabMath').classList.toggle('hidden', state.activeTab !== 'math');
+          document.getElementById('tabTable').classList.toggle('hidden', state.activeTab !== 'table');
+          renderTable();
+        });
+      });
+
+      document.getElementById('inpEvalPoint').addEventListener('input', renderPointEvaluation);
+      document.getElementById('selTableStep').addEventListener('change', (e) => {
+        state.tableStep = parseFloat(e.target.value) || 0.25;
+        renderTable();
+      });
+
+      // Ejemplos guiados
+      document.getElementById('guidedExampleSelect').addEventListener('change', (e) => {
+        loadGuidedExample(e.target.value);
+      });
+
+      // Tema claro / oscuro
+      document.getElementById('btnTheme').addEventListener('click', () => {
+        state.theme = state.theme === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', state.theme);
+        document.getElementById('btnTheme').textContent = state.theme === 'light' ? '🌙 Oscuro' : '☀️ Claro';
+        renderCanvas();
+      });
+
+      // Exportaciones
+      document.getElementById('btnExportPng').addEventListener('click', exportPng);
+      document.getElementById('btnExportCsv').addEventListener('click', exportCsv);
+
+      // Modal de ayuda
+      const helpModal = document.getElementById('helpModal');
+      document.getElementById('btnHelp').addEventListener('click', () => {
+        helpModal.classList.add('open');
+        helpModal.setAttribute('aria-hidden', 'false');
+      });
+      document.getElementById('btnCloseHelp').addEventListener('click', () => {
+        helpModal.classList.remove('open');
+        helpModal.setAttribute('aria-hidden', 'true');
+      });
+      helpModal.addEventListener('click', (e) => {
+        if (e.target === helpModal) {
+          helpModal.classList.remove('open');
+          helpModal.setAttribute('aria-hidden', 'true');
+        }
+      });
+
+      // Redimensionamiento responsivo del canvas
+      if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(() => renderCanvas()).observe(canvasStage);
+      } else {
+        window.addEventListener('resize', renderCanvas);
+      }
+
+      /* =========================================================================
+         14. INICIALIZACIÓN
+         ========================================================================= */
+      initPresetParams(state.sig1, 'continuous', 'tri');
+      initPresetParams(state.sig2, 'continuous', 'rect');
+      syncUI();
+    })();
+  </script>
+</body>
+</html>
